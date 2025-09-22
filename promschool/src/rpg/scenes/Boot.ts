@@ -42,7 +42,11 @@ export default class Boot extends Phaser.Scene {
 
     this.load.tilemapTiledJSON(
       key.tilemap.town,
-      "assets/tilemaps/grontown_embedded.json",
+      "assets/tilemaps/prologue_map.json",
+    );
+    this.load.tilemapTiledJSON(
+      key.tilemap.subway,
+      "assets/tilemaps/subway.json",
     );
   }
 
