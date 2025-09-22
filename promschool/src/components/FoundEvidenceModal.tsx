@@ -52,7 +52,7 @@ export default function FoundEvidenceModal(props: FoundEvidenceModalProps) {
     <>
       <Box
         as="button"
-        width={"95%"}
+        width={"5%"}
         height={"23vh"}
         backgroundColor={"white"}
         padding={4}

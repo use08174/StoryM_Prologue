@@ -46,7 +46,7 @@ export default function InstructionsModal() {
     <>
       <Box
         as="button"
-        width={"95%"}
+        width={"5%"}
         height={"23vh"}
         backgroundColor={"white"}
         padding={4}

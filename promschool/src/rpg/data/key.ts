@@ -5,65 +5,133 @@ const scene = {
 
 const tilemap = {
   town: "town",
+  subway: "subway",
 } as const;
 
 const tileset = {
-  victorianMansion: {
-    name: "victorian-mansion",
-    image: "victorian-mansion",
+  subway: {
+    name: "subway",
+    image: "subway",
     extruded: false,
   },
-  victorianStreets: {
-    name: "victorian-streets",
-    image: "victorian-streets",
+  Terrains_and_Fences: {
+    name: "Terrains_and_Fences",
+    image: "Terrains_and_Fences",
     extruded: false,
   },
-  victorianGarden: {
-    name: "victorian-garden",
-    image: "victorian-garden",
+  City_Terrains: {
+    name: "City_Terrains",
+    image: "City_Terrains",
     extruded: false,
   },
-  victorianMarket: {
-    name: "victorian-market",
-    image: "victorian-market",
+  City_Props: {
+    name: "City_Props",
+    image: "City_Props",
     extruded: false,
   },
-  victorianWindowsDoors: {
-    name: "victorian-windows-doors",
-    image: "victorian-windows-doors",
+  Generic_Buildings: {
+    name: "Generic_Buildings",
+    image: "Generic_Buildings",
     extruded: false,
   },
-  victorianAccessories: {
-    name: "victorian-accessories",
-    image: "victorian-accessories",
+  Floor_Modular_Buildings: {
+    name: "Floor_Modular_Buildings",
+    image: "Floor_Modular_Buildings",
     extruded: false,
   },
-  victorianTenement: {
-    name: "victorian-tenement",
-    image: "victorian-tenement",
+  Garage_Sales: {
+    name: "Garage_Sales",
+    image: "Garage_Sales",
     extruded: false,
   },
-  roofs: {
-    name: "roofs",
-    image: "roofs",
+  Villas: {
+    name: "Villas",
+    image: "Villas",
     extruded: false,
   },
-  terrain: {
-    name: "terrain",
-    image: "terrain-extruded",
-    extruded: true,
-  },
-  treesGreen: {
-    name: "trees-green",
-    image: "trees-green",
+  Worksite: {
+    name: "Worksite",
+    image: "Worksite",
     extruded: false,
   },
-  Fulltilemap: {
-    name: "Fulltilemap",
-    image: "Fulltilemap",
+  Shopping_Center_and_Markets: {
+    name: "Shopping_Center_and_Markets",
+    image: "Shopping_Center_and_Markets",
     extruded: false,
   },
+  Vehicles: {
+    name: "Vehicles",
+    image: "Vehicles",
+    extruded: false,
+  },
+  Camping: {
+    name: "Camping",
+    image: "Camping",
+    extruded: false,
+  },
+  Hotel_and_Hospital: {
+    name: "Hotel_and_Hospital",
+    image: "Hotel_and_Hospital",
+    extruded: false,
+  },
+  School: {
+    name: "School",
+    image: "School",
+    extruded: false,
+  },
+  Swimming_Pool: {
+    name: "Swimming_Pool",
+    image: "Swimming_Pool",
+    extruded: false,
+  },
+  Police_Station: {
+    name: "Police_Station",
+    image: "Police_Station",
+    extruded: false,
+  },
+  Office: {
+    name: "Office",
+    image: "Office",
+    extruded: false,
+  },
+  Garden: {
+    name: "Garden",
+    image: "Garden",
+    extruded: false,
+  },
+  Fire_Station: {
+    name: "Fire_Station",
+    image: "Fire_Station",
+    extruded: false,
+  },
+  Graveyard: {
+    name: "Graveyard",
+    image: "Graveyard",
+    extruded: false,
+  },
+  Subway_and_Train_Station: {
+    name: "Subway_and_Train_Station",
+    image: "Subway_and_Train_Station",
+    extruded: false,
+  },
+  Beach: {
+    name: "Beach",
+    image: "Beach",
+    extruded: false,
+  },
+  Post_Office: {
+    name: "Post_Office",
+    image: "Post_Office",
+    extruded: false,
+  },
+  Military_Base: {
+    name: "Military_Base",
+    image: "Military_Base",
+    extruded: false,
+  },
+
 } as const;
+
 
 export const key = {
   scene,

@@ -56,7 +56,7 @@ const NotesModal = ({ notes, setNotes }: NotesModalProps) => {
           <Image
             src="/assets/web/instruction.png"
             alt="button image"
-            width={"90%"}
+            width={"5%"}
           />
           {!isSmallScreen && (
             <Heading fontFamily="azonix" size="lg" textColor={"black"}>
