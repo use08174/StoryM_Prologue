@@ -25,9 +25,9 @@ import ConfirmStartModal from "./ConfirmStartModal";
 export const GameManager = () => {
   const [sessionId, setSessionId] = useState<string>();
   const [endResult, setEndResult] = useState<ResultScreenProps>();
-  const [exp, setExp] = useState(0);              // 0,2,4,6,8,10
-  const [alarm, setAlarm] = useState(0);          // 0 -> 1 로 변경되며 알림 표시
-  const [showMsg, setShowMsg] = useState(false);  // 메시지 모달 오픈 여부
+  const [exp, setExp] = useState(0);              
+  const [alarm, setAlarm] = useState(0);          
+  const [showMsg, setShowMsg] = useState(false);  
   const [showQuest1, setShowQuest1] = useState(false);
   const eastworldClient = new EastworldClient({ BASE: "/api" });
   const [showConfirm, setShowConfirm] = useState(false);
@@ -63,7 +63,7 @@ export const GameManager = () => {
     title="마을 이장님"
     onComplete={() => {
       setShowMsg(false);
-      setShowConfirm(true);   // ✅ 메시지 다음 단계: 확인 팝업
+      setShowConfirm(true);   
     }}
   />
 
@@ -74,14 +74,13 @@ export const GameManager = () => {
     message="퀘스트 1을 시작하시겠습니까?"
     onYes={() => {
       setShowConfirm(false);
-      setShowQuest1(true);    // ✅ 미니게임 시작
+      setShowQuest1(true);    
     }}
     onNo={() => {
-      setShowConfirm(false);  // ✅ 메인으로 (아무것도 안 띄움)
+      setShowConfirm(false);  
     }}
   />
 
-  // (예시) 퀘스트 완료 시 exp +2
   const completeQuest = () => setExp(prev => Math.min(prev + 2, 10));
 
   return (
@@ -113,7 +112,7 @@ export const GameManager = () => {
               EXP
             </Text>
             <Image
-              src={`/assets/sprites/exp_${exp}.png`} // exp_0.png ~ exp_10.png 준비
+              src={`/assets/sprites/exp_${exp}.png`} 
               alt="exp-bar"
               height="24px"
             />
@@ -129,13 +128,11 @@ export const GameManager = () => {
             {/* Phone 버튼 */}
             <PhoneButton
               alarm={alarm}
-              highlight={alarm > 0 && !showMsg}   // 알림 있을 때만 강조(움직임/화살표/펄스)
+              highlight={alarm > 0 && !showMsg}   
               onClick={() => {
-                setShowMsg(true);  // 메시지 열기
-                setAlarm(0);       // 알림 제거
+                setShowMsg(true);  
+                setAlarm(0);      
               }}
-              // label="Alarm"                           // 라벨 커스터마이즈 가능
-              // iconSrc="/assets/sprites/phone_button.png" // 아이콘 바꿀 때만 지정
             />
 
             {/* Book 버튼 */}
@@ -181,12 +178,10 @@ export const GameManager = () => {
             </Box>
           </HStack>
 
-          {/* 중앙 게임 화면 (지하철 타일맵은 Phaser 씬에서) */}
           <Center width={"100%"} height={"100%"}>
             <Game />
           </Center>
 
-          {/* 메시지 모달: 마지막 대사 = “퀘스트 1을 시작하시겠습니까?” */}
           <MessageModal
             isOpen={showMsg}
             title="마을 이장님"
@@ -209,7 +204,6 @@ export const GameManager = () => {
             incomeKRW={1_800_000}
           />
 
-          {/* 기존 모달들 */}
           <ChatModal
             eastworldClient={eastworldClient}
             sessionId={sessionId}
