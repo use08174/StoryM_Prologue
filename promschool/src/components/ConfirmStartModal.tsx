@@ -3,8 +3,8 @@ import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
 
 type Props = {
   isOpen: boolean;
-  title?: string;         // 상단 리본 텍스트 (예: 퀘스트 1)
-  message?: string;       // 본문
+  title?: string;         
+  message?: string;       
   onYes: () => void;
   onNo: () => void;
 };
@@ -38,13 +38,12 @@ export default function ConfirmStartModal({
         transform="translate(-50%, -50%)"
         maxW="640px"
         w={["92%", "620px"]}
-        bg="#f7f7f5"                 // 밝은 톤
-        border="2px solid #815b3a"   // 갈색 테두리
+        bg="#f7f7f5"                 
+        border="2px solid #815b3a"   
         borderRadius="22px"
         boxShadow="0 10px 30px rgba(0,0,0,.2)"
         p={6}
       >
-        {/* 상단 리본 */}
         <Box
           display="inline-block"
           bg="#f0e2cc"

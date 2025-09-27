@@ -1,4 +1,3 @@
-// components/Quest1MiniGame.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
@@ -13,23 +12,17 @@ import {
   Divider,
 } from "@chakra-ui/react";
 
-/**
- * 🍎 Quest1 MiniGame — 자취 예산 과일 받기 (React/Chakra)
- * - 중앙 카드 오버레이(흰 배경 + 갈색 테두리)
- * - 좌측 상단 "QUEST 1" 라벨
- * - 교육(고정 시퀀스) / 아케이드(랜덤) 지원
- */
 
 type Props = {
   isOpen: boolean;
-  onClose: () => void;                     // 닫기(취소)
-  onFinish: (report: Report) => void;      // 종료 & 결과 전달
+  onClose: () => void;                     
+  onFinish: (report: Report) => void;      
   mode?: "edu" | "arcade";
-  incomeKRW?: number;                      // 원 단위(기본 1,800,000)
+  incomeKRW?: number;                      
 };
 
 type KPIs = { happy: number; health: number; stability: number };
-type Bag = Record<string, number>;         // key -> 누적(만원)
+type Bag = Record<string, number>;         
 type Drop = {
   key: string; emoji: string; color: string; price: number;
   x: number; y: number; vy: number; r: number;
@@ -406,7 +399,6 @@ export default function Quest1MiniGame({
         pb={4}
         w={["92%", "950px"]}
       >
-        {/* 좌측 상단 라벨 */}
         <Box
           position="absolute"
             top="10px"
@@ -416,16 +408,14 @@ export default function Quest1MiniGame({
             borderRadius="10px"
             px={3}
             py={0.5}
-            zIndex={3}          // ⬅️ 라벨이 항상 위로
+            zIndex={3}          
         >
             <Text fontSize="sm" fontWeight="bold" color={LABEL_TEXT}>
             QUEST 1
             </Text>
         </Box>
 
-        {/* 레이아웃: 좌(캔버스) / 우(사이드) */}
         <Flex gap={4} align="stretch">
-          {/* 좌: 캔버스 카드 */}
           <Box
             position="relative"
             bg={CARD_WHITE}
