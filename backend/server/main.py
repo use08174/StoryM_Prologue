@@ -20,6 +20,7 @@ from server.router import (
     game_def_handlers,
     llm_handlers,
     util_handlers,
+    youth_policy_handlers,
 )
 from server.typecheck_fighter import pipeline_exec
 from server.util.json_loader import load_games_from_path
@@ -33,10 +34,18 @@ GAMES_DEFS_SET = "GAME_DEFS"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    redis_client: Redis[bytes] = Redis(
-        host="localhost",
-        port=6379,
-    )
+    # Use FakeRedis for development if real Redis is not available
+    try:
+        redis_client: Redis[bytes] = Redis(
+            host="localhost",
+            port=6379,
+        )
+        # Test connection
+        await redis_client.ping()
+    except Exception:
+        # Fallback to FakeRedis
+        from fakeredis import aioredis
+        redis_client = aioredis.FakeRedis()
     sessions: SessionsType = {}
     parser = configparser.ConfigParser()
     parser.read("config.ini")
@@ -131,3 +140,4 @@ app.include_router(game_def_handlers.router)
 app.include_router(agent_def_handlers.router)
 app.include_router(session_handlers.router)
 app.include_router(authorization_handlers.router)
+app.include_router(youth_policy_handlers.router)
