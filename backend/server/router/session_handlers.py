@@ -36,6 +36,8 @@ from server.schema.debug import (
 from server.security.auth import authenticate
 from server.typecheck_fighter import RedisType
 from server.util.rate_limit import rate_limiter
+from server.services.real_estate_agent import RealEstateGameAgent
+from server.router.youth_policy_handlers import YouthPolicyService
 
 router = APIRouter(prefix="/session", tags=["Game Sessions"])
 
@@ -236,6 +238,19 @@ async def chat(
     """
     session = sessions[UUID4(session_uuid)]
     gen_agent = get_gen_agent(agent, session)
+
+    # 부동산 관련 에이전트인 경우 정책 정보 추가
+    if agent.lower() in ['real_estate_advisor', '부동산조언사', 'real_estate_agent']:
+        try:
+            policy_service = YouthPolicyService("YOUR_API_KEY")  # TODO: config.ini에서 API 키를 읽어오도록 수정 필요
+            real_estate_agent = RealEstateGameAgent(policy_service)
+            enhanced_prompt = await real_estate_agent.get_enhanced_system_prompt(
+                "당신은 청년 부동산 정책 전문가입니다.", message
+            )
+            # 에이전트의 시스템 프롬프트 업데이트 (실제 구현에서는 gen_agent의 프롬프트를 수정)
+        except Exception as e:
+            print(f"정책 정보 로드 실패: {e}")
+            # 정책 정보 로드 실패 시 기본 채팅 진행
 
     response, debug = await gen_agent.chat(message)
 

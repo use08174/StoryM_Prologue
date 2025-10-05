@@ -172,3 +172,6 @@ dump.rdb
 
 # Ignore personal games
 game_defs/
+
+# api key
+config.ini
