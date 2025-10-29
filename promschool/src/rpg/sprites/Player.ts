@@ -342,7 +342,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
 
     scene.cameras.main.startFollow(this);
-    scene.cameras.main.setZoom(1);
+    scene.cameras.main.setZoom(1.6);
 
     this.cursors = scene.input.keyboard!.createCursorKeys();
     this.WASDKeys = scene.input.keyboard!.addKeys({
