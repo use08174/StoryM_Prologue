@@ -1,15 +1,14 @@
 import Phaser from "phaser";
-
 import { key } from "../data";
 import { Player } from "../sprites";
 import { isProduction } from "env";
 import { Npc } from "rpg/sprites/Npc";
 import Topics from "rpg/data/topics";
 import characters from "rpg/data/characters";
-import evidence from "rpg/data/evidence";
 import { Evidence } from "rpg/sprites/Evidence";
 import { getGameState } from "rpg/data/persistence";
-// import PubSub from "pubsub-js"; // 전역이 아니면 주석 해제
+import PubSub from "pubsub-js";
+
 
 type TilesetDef = { name: string; image: string; extruded?: boolean };
 
@@ -68,6 +67,14 @@ export default class Main extends Phaser.Scene {
   private npcs: Npc[] = [];
   private evidences: Evidence[] = [];
   private isTransitioning = false;
+  private questText!: Phaser.GameObjects.Text;
+  private spaceKey!: Phaser.Input.Keyboard.Key;
+  private houseZone!: Phaser.GameObjects.Zone;
+  private isNearHouse = false;
+  // Main.ts 상단 class 안에 필드 추가
+  private quest2Prompt!: Phaser.GameObjects.Text;// 안내 텍스트
+
+
 
   constructor() {
     super(key.scene.main);
@@ -80,7 +87,7 @@ export default class Main extends Phaser.Scene {
 
     const { map, collisionGroup, collisionTileLayers } = this.createMap(startMapKey);
 
-    // 스폰 찾기: objectGroups를 순회하며 첫 매치 사용
+    // 스폰 찾기
     const spawnName = data.spawnName ?? cfg.spawnName;
     let spawnPoint: any | undefined;
     for (const group of cfg.objectGroups) {
@@ -91,7 +98,7 @@ export default class Main extends Phaser.Scene {
 
     this.player = new Player(this, spawnPoint.x!, spawnPoint.y!);
 
-    // 타일 충돌 레이어(복수) 연결
+    // 충돌 연결
     for (const tl of collisionTileLayers) {
       this.physics.add.collider(this.player, tl);
     }
@@ -103,7 +110,39 @@ export default class Main extends Phaser.Scene {
 
     this.setupPubSub();
     this.renderDebug();
+
+    // ===============================
+    // 🎯 여기서부터 Quest2 관련 추가
+    // ===============================
+
+    // 1️⃣ Space 키 등록
+    this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+    // 2️⃣ 안내 텍스트 생성 (초기엔 비워둠)
+    this.questText = this.add
+      .text(this.cameras.main.width / 2, this.cameras.main.height - 80, "", {
+        fontSize: "18px",
+        color: "#ffffff",
+        backgroundColor: "rgba(0,0,0,0.6)",
+        padding: { left: 12, right: 12, top: 8, bottom: 8 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(10000);
+
+    // 3️⃣ 퀘스트2 영역 생성 (건물 좌표는 직접 조정)
+    this.houseZone = this.add.zone(-213, -75, 200, 160).setOrigin(0.5);
+    this.physics.add.existing(this.houseZone, true);
+
+    // 4️⃣ 플레이어가 근처 들어올 때 감지
+    this.physics.add.overlap(this.player, this.houseZone, () => {
+      if (!this.isNearHouse) {
+        this.isNearHouse = true;
+        this.questText.setText("퀘스트 2를 시작하시겠습니까?\n[Space] 키로 시작");
+      }
+    });
   }
+
 
   private createMap(mapKey: string): {
     map: Phaser.Tilemaps.Tilemap;
@@ -372,5 +411,32 @@ export default class Main extends Phaser.Scene {
 
   update() {
     this.player.update();
+    // console.log(`Player: ${Math.round(this.player.x)}, ${Math.round(this.player.y)}`);
+
+    // 3-1) 존에서 벗어나면 안내 숨김
+    if (this.isNearHouse && this.houseZone) {
+      const pb = this.player.getBounds();
+      const zb = this.houseZone.getBounds();
+      if (!Phaser.Geom.Intersects.RectangleToRectangle(pb, zb)) {
+        this.isNearHouse = false;
+        this.questText.setText("");
+      }
+    }
+
+    // 🔸 Space 키로 Quest2 시작
+    if (this.isNearHouse && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+      console.log("🚀 Quest 2 시작 트리거됨!");
+      this.questText.setText("");
+      this.isNearHouse = false;
+
+      // React(GameManager)로 퀘스트 시작 신호 보내기
+      PubSub.publish(Topics.startQuest2);
+    }
+  }
+
+
+  private startQuest2() {
+    this.questText.setText("퀘스트2 시작!");
+    console.log("Quest 2 시작!");
   }
 }
