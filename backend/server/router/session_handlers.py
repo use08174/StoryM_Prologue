@@ -221,6 +221,7 @@ async def chat(
     message: str,
     send_debug: bool = False,
     sessions: SessionsType = Depends(get_sessions),
+    config_parser: ConfigParser = Depends(get_config_parser),
 ) -> MessageWithDebug:
     """Sends `message` to the given agent. They will respond with text.
 
@@ -242,7 +243,9 @@ async def chat(
     # 부동산 관련 에이전트인 경우 정책 정보 추가
     if agent.lower() in ['real_estate_advisor', '부동산조언사', 'real_estate_agent']:
         try:
-            policy_service = YouthPolicyService("YOUR_API_KEY")  # TODO: config.ini에서 API 키를 읽어오도록 수정 필요
+            # config.ini에서 API 키를 읽어옵니다
+            api_key = config_parser.get("youth_policy", "api_key", fallback="YOUR_API_KEY")
+            policy_service = YouthPolicyService(api_key)
             real_estate_agent = RealEstateGameAgent(policy_service)
             enhanced_prompt = await real_estate_agent.get_enhanced_system_prompt(
                 "당신은 청년 부동산 정책 전문가입니다.", message
