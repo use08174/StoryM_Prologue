@@ -9,18 +9,18 @@ export default class Boot extends Phaser.Scene {
 
   preload() {
     this.load.spritesheet(
-      characters.detective.sprite,
-      "assets/sprites/detective.png",
+      characters.main_girl.sprite,
+      "assets/sprites/main_girl.png",
       {
         frameWidth: 64,
         frameHeight: 64,
-        startFrame: 104,
-        endFrame: 155,
+        startFrame: 72,
+        endFrame: 107,
       },
     );
 
     for (const [character, value] of Object.entries(characters)) {
-      if (character !== "detective") {
+      if (character !== "main_girl") {
         this.load.spritesheet(
           value.sprite,
           `assets/sprites/${value.sprite}.png`,
