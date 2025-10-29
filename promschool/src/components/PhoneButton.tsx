@@ -34,7 +34,7 @@ export default function PhoneButton({
   highlight = false,
   onClick,
   label = "Alarm",
-  iconSrc = "/assets/sprites/phone_button.png",
+  iconSrc = "/assets/sprites/storym_phone.png",
   rightAdornment,
 }: PhoneButtonProps) {
   return (
