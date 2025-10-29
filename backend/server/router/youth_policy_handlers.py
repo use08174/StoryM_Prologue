@@ -1,5 +1,6 @@
 import httpx
 import asyncio
+import configparser
 from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -210,8 +211,11 @@ def categorize_keywords(keywords: List[str]) -> Dict[str, List[str]]:
     return {k: v for k, v in categories.items() if v}
 
 # 전역 서비스 인스턴스 (실제로는 의존성 주입 사용)
-# TODO: config.ini에서 API 키를 읽어오도록 수정 필요
-youth_policy_service = YouthPolicyService("YOUR_API_KEY")
+# config.ini에서 API 키를 읽어옵니다
+parser = configparser.ConfigParser()
+parser.read("config.ini")
+api_key = parser.get("youth_policy", "api_key", fallback="YOUR_API_KEY")
+youth_policy_service = YouthPolicyService(api_key)
 
 @router.post("/search", response_model=PolicySearchResponse)
 async def search_youth_policy(request: PolicySearchRequest):
