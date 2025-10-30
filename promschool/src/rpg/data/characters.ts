@@ -32,10 +32,10 @@ function createCharacter(partial: PartialCharacter): Character {
 }
 
 const characters: Record<string, Character> = {
-  detective: createCharacter({
-    eastworldId: "Detective",
-    sprite: "detective",
-    photo: "assets/photos/detective.jpeg",
+  main_girl: createCharacter({
+    eastworldId: "main_girl",
+    sprite: "main_girl",
+    photo: "assets/photos/sumin_shim.jpeg",
     arrestable: false,
   }),
 

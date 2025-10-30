@@ -106,7 +106,7 @@ export default class Main extends Phaser.Scene {
     this.createInteractables(map, collisionGroup, cfg);
     this.player.setUpSensingNpcs(this.npcs);
     this.player.setUpSensingEvidence(this.evidences);
-    this.player.setUpEvents(map);
+    // this.player.setUpEvents(map);
 
     this.setupPubSub();
     this.renderDebug();
@@ -289,7 +289,7 @@ export default class Main extends Phaser.Scene {
   ) {
     // NPC / 증거물 (필요 시 복구)
     for (const [characterName, characterDef] of Object.entries(characters)) {
-      if (characterName === "detective") continue;
+      if (characterName === "main_girl") continue;
       if (getGameState().goneNpcs.has(characterName)) continue;
 
       // objectGroups를 돌며 이름으로 위치 찾기
