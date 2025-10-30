@@ -7,6 +7,7 @@ from pydantic import UUID4
 
 from game.session import Session
 from llm.base import LLMBase
+from sqlalchemy.orm import Session as OrmSession, sessionmaker
 
 SessionsType = dict[UUID4, Session]
 
@@ -33,3 +34,8 @@ def get_google_sso(request: Request) -> GoogleSSO:
 
 def get_github_sso(request: Request) -> GithubSSO:
     return request.state.github_sso
+
+
+def get_db_session(request: Request) -> OrmSession:
+    SessionMaker: sessionmaker = request.state.db_sessionmaker
+    return SessionMaker()
