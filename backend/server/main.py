@@ -37,6 +37,7 @@ from server.router import (  # noqa: E402
     llm_handlers,
     youth_policy_handlers,
     auth_simple_handlers,
+    session_handlers,
 )
 from server.util.sso import generate_github_sso, generate_google_sso  # noqa: E402
 from server.db import create_session_maker  # noqa: E402
@@ -171,7 +172,7 @@ app.add_middleware(
 app.include_router(llm_handlers.router)
 app.include_router(youth_policy_handlers.router)
 app.include_router(auth_simple_handlers.router)
-
+app.include_router(session_handlers.router)
 
 if __name__ == "__main__":
     import uvicorn
