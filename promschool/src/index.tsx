@@ -5,6 +5,7 @@ import reportWebVitals from "./reportWebVitals";
 import * as serviceWorker from "./serviceWorker";
 import { ColorModeScript } from "@chakra-ui/react";
 import { BgmProvider } from "./BgmProvider";
+import "./global.css";
 
 const container = document.getElementById("root");
 if (!container) throw new Error("Failed to find the root element");
