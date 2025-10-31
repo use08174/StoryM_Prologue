@@ -1,10 +1,9 @@
 [project]
-name = "backend"
-version = "0.1.0"
-description = "Default template for PDM package"
+name = ""
+version = ""
+description = ""
 authors = [
     {name = "Michael Luo", email = "deltameter@gmail.com"},
-    {name = "jyhannakim", email = "jyhannakim@gmail.com"},
 ]
 dependencies = [
     "openai>=1.40.0",
@@ -25,9 +24,8 @@ dependencies = [
     "python-jose>=3.3.0",
     "fastapi-limiter>=0.1.5",
 ]
-requires-python = "==3.12.*"
-license = {text = "MIT"}
-readme = "README.md"
+requires-python = ">=3.10,<3.12"
+license = {text = "Apache2.0"}
 
 [tool.pytest.ini_options]
 addopts = [
@@ -37,5 +35,7 @@ addopts = [
 [tool.pyright]
 strict = ["**/*"]
 
-[tool.pdm]
-distribution = false
+[tool.pdm.scripts]
+start = "uvicorn server.main:app --reload"
+dev = "uvicorn server.main:app --reload --host 0.0.0.0 --port 8000"
+serve = "uvicorn server.main:app --host 0.0.0.0 --port 8000"

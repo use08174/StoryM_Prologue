@@ -62,7 +62,7 @@ export default function InstructionsModal() {
       >
         <VStack>
           <Image
-            src="/assets/web/detective.png"
+            src="/assets/web/main_girl.png"
             alt="button image"
             width={"90%"}
             margin="1vh 0 1vh 0"
@@ -83,7 +83,7 @@ export default function InstructionsModal() {
                 <Center paddingLeft={3} paddingRight={3}>
                   <Image
                     borderRadius="xl"
-                    src={"/assets/photos/detective.jpeg"}
+                    src={"/assets/photos/main_girl.jpeg"}
                     objectFit={"cover"}
                   ></Image>
                   <Image
