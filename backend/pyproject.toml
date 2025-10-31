@@ -1,9 +1,10 @@
 [project]
-name = ""
-version = ""
-description = ""
+name = "backend"
+version = "0.1.0"
+description = "Default template for PDM package"
 authors = [
     {name = "Michael Luo", email = "deltameter@gmail.com"},
+    {name = "jyhannakim", email = "jyhannakim@gmail.com"},
 ]
 dependencies = [
     "openai>=1.40.0",
@@ -24,8 +25,9 @@ dependencies = [
     "python-jose>=3.3.0",
     "fastapi-limiter>=0.1.5",
 ]
-requires-python = ">=3.10,<3.12"
-license = {text = "Apache2.0"}
+requires-python = "==3.12.*"
+license = {text = "MIT"}
+readme = "README.md"
 
 [tool.pytest.ini_options]
 addopts = [
@@ -34,3 +36,6 @@ addopts = [
 
 [tool.pyright]
 strict = ["**/*"]
+
+[tool.pdm]
+distribution = false

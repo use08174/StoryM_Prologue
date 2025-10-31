@@ -4,7 +4,7 @@ import configparser
 from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-
+from pathlib import Path
 router = APIRouter(prefix="/youth-policy", tags=["Youth Policy"])
 
 # 부동산 관련 검색 가능한 키워드들
@@ -213,7 +213,9 @@ def categorize_keywords(keywords: List[str]) -> Dict[str, List[str]]:
 # 전역 서비스 인스턴스 (실제로는 의존성 주입 사용)
 # config.ini에서 API 키를 읽어옵니다
 parser = configparser.ConfigParser()
-parser.read("config.ini")
+config_path = Path(__file__).parent / "config.ini"
+parser.read(config_path)
+#parser.read("config.ini")
 api_key = parser.get("youth_policy", "api_key", fallback="YOUR_API_KEY")
 youth_policy_service = YouthPolicyService(api_key)
 

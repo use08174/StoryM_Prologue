@@ -4,7 +4,7 @@ import os
 import pickle
 from contextlib import asynccontextmanager
 from typing import List
-
+from pathlib import Path
 from aiohttp import ClientSession
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,7 +48,9 @@ async def lifespan(app: FastAPI):
         redis_client = aioredis.FakeRedis()
     sessions: SessionsType = {}
     parser = configparser.ConfigParser()
-    parser.read("config.ini")
+    #parser.read("config.ini")
+    config_path = Path(__file__).parent / "config.ini"
+    parser.read(config_path)
 
     use_local_llm = parser.getboolean("llm", "use_local_llm", fallback=False)
     api_base = "http://localhost:8080/v1" if use_local_llm else None
