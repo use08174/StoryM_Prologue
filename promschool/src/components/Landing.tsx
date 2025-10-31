@@ -77,7 +77,7 @@ export const Landing = () => {
           <Button variant="unstyled" onClick={() => { ensurePlay(); navigate("/setting"); }}>
             <Image src={ICONS.setting} alt="SETTING" maxH={{ base: "16px", sm: "20px", md: "22px" }} draggable={false} />
           </Button>
-          <Button variant="unstyled" onClick={() => { ensurePlay(); navigate("/prologue"); }}>
+          <Button variant="unstyled" onClick={() => { ensurePlay(); navigate("/auth"); }}>
             <Image src={ICONS.play} alt="PLAY" maxH={{ base: "40px", sm: "44px", md: "48px" }} draggable={false} />
           </Button>
           <Button variant="unstyled" onClick={() => { ensurePlay(); navigate("/credit"); }}>
