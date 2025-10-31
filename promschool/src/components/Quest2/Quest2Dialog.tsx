@@ -1,54 +1,53 @@
-import { Box, Text, HStack, Avatar, Badge, Image } from "@chakra-ui/react";
+import { Box, Text, Badge } from "@chakra-ui/react";
 
-type Props = {
+type Quest2DialogProps = {
   speaker?: string;
   text: string;
-  mission?: boolean;
-  image?: string;
-  end?: boolean;
+  tone?: "default" | "buddy"; // buddy는 파란 강조
+  onFinish?: () => void;
 };
 
-export default function Quest2Dialog({ speaker, text, mission, image, end }: Props) {
+export default function Quest2Dialog({
+  speaker,
+  text,
+  tone = "default",
+}: Quest2DialogProps) {
+  const isBuddy = tone === "buddy";
+
   return (
     <Box
       position="absolute"
-      bottom="30px"
-      width="80%"
-      left="10%"
-      p={5}
-      borderRadius="2xl"
-      bg="whiteAlpha.900"
+      left="50%"
+      transform="translateX(-50%)"
+      bottom="0"
+      width="92%"
+      bg="white"
+      border="3px solid #333"
+      borderBottom="none"
+      borderRadius="24px 24px 0 0"
       boxShadow="lg"
-      fontFamily="Pretendard"
+      color="black"
+      p={5}
+      zIndex={500}
     >
-      {image && (
-        <Image
-          src={image}
-          alt="scene"
-          width="100%"
-          borderRadius="xl"
-          mb={3}
-        />
-      )}
-
       {speaker && (
-        <HStack spacing={3} mb={2}>
-          <Avatar size="sm" name={speaker} />
-          <Badge colorScheme="pink" px={2} py={1} borderRadius="lg">
-            {speaker}
-          </Badge>
-        </HStack>
+        <Badge
+          colorScheme={isBuddy ? "blue" : "gray"}
+          px={3}
+          py={1}
+          borderRadius="lg"
+          mb={2}
+          fontSize="sm"
+        >
+          {speaker}
+        </Badge>
       )}
-
-      <Text whiteSpace="pre-line" fontSize="md">
+      <Text whiteSpace="pre-line" lineHeight="1.6">
         {text}
       </Text>
-
-      {!end && (
-        <Text textAlign="right" fontSize="sm" mt={3} color="gray.500">
-          Enter 키로 다음 ▶
-        </Text>
-      )}
+      <Text position="absolute" right="16px" bottom="10px" fontSize="sm" color="gray.500">
+        Enter/Space ▸
+      </Text>
     </Box>
   );
 }
