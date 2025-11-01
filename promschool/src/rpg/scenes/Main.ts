@@ -67,12 +67,13 @@ export default class Main extends Phaser.Scene {
   private npcs: Npc[] = [];
   private evidences: Evidence[] = [];
   private isTransitioning = false;
-  private questText!: Phaser.GameObjects.Text;
   private spaceKey!: Phaser.Input.Keyboard.Key;
-  private houseZone!: Phaser.GameObjects.Zone;
-  private isNearHouse = false;
-  // Main.ts 상단 class 안에 필드 추가
-  private quest2Prompt!: Phaser.GameObjects.Text;// 안내 텍스트
+  private quest1!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
+  private quest2!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
+  private quest3!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
+  private activeQuestZone: number | null = null;
+  private questStarted: boolean = false;
+
 
 
 
@@ -112,35 +113,82 @@ export default class Main extends Phaser.Scene {
     this.renderDebug();
 
     // ===============================
-    // 🎯 여기서부터 Quest2 관련 추가
-    // ===============================
+    // 여기서부터 Quest 관련 추가 (Quest1~3)
 
-    // 1️⃣ Space 키 등록
     this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    const createQuestZone = (
+      x: number,
+      y: number,
+      label: string,
+      questId: number
+    ) => {
+      const zone = this.add.zone(x, y, 200, 160).setOrigin(0.5);
+      this.physics.add.existing(zone, true);
 
-    // 2️⃣ 안내 텍스트 생성 (초기엔 비워둠)
-    this.questText = this.add
-      .text(this.cameras.main.width / 2, this.cameras.main.height - 80, "", {
-        fontSize: "18px",
-        color: "#ffffff",
-        backgroundColor: "rgba(0,0,0,0.6)",
-        padding: { left: 12, right: 12, top: 8, bottom: 8 },
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(10000);
+      const text = this.add
+        .text(
+          x,
+          y - 80,
+          label,
+          {
+            fontSize: "13px",
+            color: "#ffffff",
+            backgroundColor: "rgba(0,0,0,0.7)",
+            padding: { left: 10, right: 10, top: 6, bottom: 6 },
+            align: "center",
+          }
+        )
+        .setOrigin(0.5)
+        .setDepth(2000)
+        .setScrollFactor(1)
+        .setVisible(true);
 
-    // 3️⃣ 퀘스트2 영역 생성 (건물 좌표는 직접 조정)
-    this.houseZone = this.add.zone(-213, -75, 200, 160).setOrigin(0.5);
-    this.physics.add.existing(this.houseZone, true);
+      // 디버그 박스
+      /*this.add.graphics()
+        .lineStyle(2, 0xff0000)
+        .strokeRectShape(zone.getBounds());*/
 
-    // 4️⃣ 플레이어가 근처 들어올 때 감지
-    this.physics.add.overlap(this.player, this.houseZone, () => {
-      if (!this.isNearHouse) {
-        this.isNearHouse = true;
-        this.questText.setText("퀘스트 2를 시작하시겠습니까?\n[Space] 키로 시작");
-      }
+      // 살짝 깜빡이는 효과 (선택사항)
+      this.tweens.add({
+        targets: text,
+        alpha: { from: 1, to: 0.6 },
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+      });
+
+      return { zone, text, questId };
+    };
+    this.quest1 = createQuestZone(
+      650,
+      708,
+      "🚇 이곳은 퀘스트 1 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
+      1
+    );
+    this.quest2 = createQuestZone(
+      -212,
+      -82,
+      "🏠 이곳은 퀘스트 2 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
+      2
+    );
+    this.quest3 = createQuestZone(
+       150,
+      -82,
+      "🏢 이곳은 퀘스트 3 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
+      3
+    );
+    this.activeQuestZone = null;
+    this.questStarted = false;
+
+    [this.quest1, this.quest2, this.quest3].forEach(({ zone, questId }) => {
+      this.physics.add.overlap(this.player, zone, () => {
+        if (!this.questStarted) this.activeQuestZone = questId;
+      });
     });
+
+
+
+    
   }
 
 
@@ -384,21 +432,30 @@ export default class Main extends Phaser.Scene {
   private setupPubSub() {
     PubSub.subscribe(Topics.giveKeysToDom, () => {
       if (this.input.keyboard && this.input.keyboard.enabled) {
+        try {
+          if ((this.input.keyboard as any)._capture) {
+            this.input.keyboard.disableGlobalCapture();
+          }
+        } catch (err) {
+          console.warn("[Phaser] disableGlobalCapture skipped:", err);
+        }
         this.input.keyboard.enabled = false;
-        this.input.keyboard.disableGlobalCapture();
       }
     });
+
     PubSub.subscribe(Topics.giveKeysToGame, () => {
       if (this.input.keyboard && !this.input.keyboard.enabled) {
         this.input.keyboard.enabled = true;
         try {
-          this.input.keyboard.enableGlobalCapture();
+          if ((this.input.keyboard as any)._capture) {
+            this.input.keyboard.enableGlobalCapture();
+          }
         } catch (error) {
-          console.warn("Failed to enable global keyboard capture:", error);
+          console.warn("[Phaser] enableGlobalCapture skipped:", error);
         }
       }
-    });
-  }
+  });
+}
 
   private renderDebug() {
     if (isProduction) return;
@@ -411,32 +468,29 @@ export default class Main extends Phaser.Scene {
 
   update() {
     this.player.update();
-    // console.log(`Player: ${Math.round(this.player.x)}, ${Math.round(this.player.y)}`);
 
-    // 3-1) 존에서 벗어나면 안내 숨김
-    if (this.isNearHouse && this.houseZone) {
-      const pb = this.player.getBounds();
-      const zb = this.houseZone.getBounds();
-      if (!Phaser.Geom.Intersects.RectangleToRectangle(pb, zb)) {
-        this.isNearHouse = false;
-        this.questText.setText("");
+    if (this.activeQuestZone && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+      this.questStarted = true;
+      const questId = this.activeQuestZone;
+      console.log(`Quest ${questId} 시작`);
+      PubSub.publish(Topics[`startQuest${questId}` as keyof typeof Topics]);
+    }
+
+    if (this.activeQuestZone) {
+      const activeQuest = [this.quest1, this.quest2, this.quest3].find(
+        (q) => q.questId === this.activeQuestZone
+      );
+      if (
+        activeQuest &&
+        !Phaser.Geom.Intersects.RectangleToRectangle(
+          this.player.getBounds(),
+          activeQuest.zone.getBounds()
+        )
+      ) {
+        this.activeQuestZone = null;
       }
     }
-
-    // 🔸 Space 키로 Quest2 시작
-    if (this.isNearHouse && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-      console.log("🚀 Quest 2 시작 트리거됨!");
-      this.questText.setText("");
-      this.isNearHouse = false;
-
-      // React(GameManager)로 퀘스트 시작 신호 보내기
-      PubSub.publish(Topics.startQuest2);
-    }
   }
 
 
-  private startQuest2() {
-    this.questText.setText("퀘스트2 시작!");
-    console.log("Quest 2 시작!");
-  }
 }

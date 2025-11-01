@@ -16,14 +16,14 @@ type ActionItem = {
 };
 
 const windowActions: ActionItem[] = [
-  { key: "open", label: "창문 열어보기", sfx: "/assets/quest2/sfx_window_creak.mp3" },
+  { key: "open", label: "창문 열어보기", sfx: "/assets/quest2_scenes/sfx_window_creak.mp3" },
   { key: "sill", label: "창틀 들여다보기", img: "/assets/quest2/window_sill_dirty.png" },
   { key: "lock", label: "잠금장치 확인하기", img: "/assets/quest2/window_lock.png" },
 ];
 
 const sinkActions: ActionItem[] = [
-  { key: "water", label: "물 틀어보기", sfx: "/assets/quest2/sfx_water_on.mp3" },
-  { key: "drain", label: "배수 확인하기", sfx: "/assets/quest2/sfx_water_drain.mp3" },
+  { key: "water", label: "물 틀어보기", sfx: "/assets/quest2_scenes/room1_sink_with water.png" },
+  { key: "drain", label: "배수 확인하기", sfx: "/assets/quest2_scenes/room1_sink water.png" },
 ];
 
 const bathActions: ActionItem[] = [
