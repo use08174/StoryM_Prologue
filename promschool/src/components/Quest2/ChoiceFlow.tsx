@@ -7,7 +7,6 @@ type Props = {
   onClose: () => void;
 };
 
-// 공통 액션 타입(이미지/사운드는 선택)
 type ActionItem = {
   key: string;
   label: string;
@@ -16,14 +15,15 @@ type ActionItem = {
 };
 
 const windowActions: ActionItem[] = [
-  { key: "open", label: "창문 열어보기", sfx: "/assets/quest2_scenes/sfx_window_creak.mp3" },
-  { key: "sill", label: "창틀 들여다보기", img: "/assets/quest2/window_sill_dirty.png" },
-  { key: "lock", label: "잠금장치 확인하기", img: "/assets/quest2/window_lock.png" },
+  { key: "open", label: "창문 열어보기", sfx: "/assets/quest2_scenes/room1_window.png" },
+  { key: "sill", label: "창틀 들여다보기", img: "/assets/quest2_scenes/room1_window.png" },
+  { key: "lock", label: "잠금장치 확인하기", img: "/assets/quest2_scenes/room1_window.png" },
 ];
 
 const sinkActions: ActionItem[] = [
+  { key: "open", label: "싱크대", sfx: "/assets/quest2_scenes/sink.png" },
   { key: "water", label: "물 틀어보기", sfx: "/assets/quest2_scenes/room1_sink_with water.png" },
-  { key: "drain", label: "배수 확인하기", sfx: "/assets/quest2_scenes/room1_sink water.png" },
+  { key: "drain", label: "배수 확인하기", sfx: "/assets/quest2_scenes/room1_sink_below.png" },
 ];
 
 const bathActions: ActionItem[] = [
@@ -76,7 +76,7 @@ export default function ChoiceFlow({ type, onClose }: Props) {
 
   const buddyLine =
     type === 1
-      ? "창문이 덜걱대지 않고 잘 열리는지 확인해야 해. 창틀 사이사이에 먼지나 죽은 벌레들이 지나치게 많이 쌓여 있지는 않은지 꼭 확인하고! 이중창 여부와 잠금장치도 체크!"
+      ? "창문이 덜걱대지 않고 잘 열리는지 확인해야 해. \n 창틀 사이사이에 먼지나 죽은 벌레들이 지나치게 많이 쌓여 있지는 않은지 꼭 확인하고! \n 이중창 여부와 잠금장치도 체크!"
       : type === 2
       ? "싱크대 수전의 수압, 배수 속도, 하부 배관 누수 여부를 확인해!"
       : "세면대 물, 변기 물내림, 환풍기 작동, 틈새 곰팡이 여부를 꼭 확인해!";
@@ -144,7 +144,7 @@ export default function ChoiceFlow({ type, onClose }: Props) {
               <Image
                 src={showImg}
                 alt="detail"
-                maxH="220px"
+                maxH="420px"
                 borderRadius="10px"
                 mx="auto"
               />
@@ -186,7 +186,7 @@ export default function ChoiceFlow({ type, onClose }: Props) {
               border="2px solid #333"
               borderRadius="10px"
             >
-              선택지로 돌아가기 (Enter)
+              선택지로 돌아가기
             </Button>
           </Box>
         </>
