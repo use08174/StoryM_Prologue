@@ -19,11 +19,12 @@ import { getGameState, saveGameState } from "rpg/data/persistence";
 import { initGA, logStartGame } from "analytics";
 import RateLimitModal from "./RateLimitModal";
 import MessageModal from "./MessageModal";
-import Quest1MiniGame from "./Quest1MiniGame";
 import PhoneButton from "./PhoneButton";
 import ConfirmStartModal from "./ConfirmStartModal";
+import PubSub from "pubsub-js"; // 
+import Quest1 from "./Quest1/Quest1";
 import Quest2 from "./Quest2/Quest2";
-import PubSub from "pubsub-js"; // ⭐️ Quest2 이벤트 연결용
+//import Quest3 from "./Quest3/Quest3";
 
 export const GameManager = () => {
   const [sessionId, setSessionId] = useState<string>();
@@ -32,10 +33,11 @@ export const GameManager = () => {
   const [alarm, setAlarm] = useState(0);
   const [showMsg, setShowMsg] = useState(false);
   const [showQuest1, setShowQuest1] = useState(false);
-  const [showQuest2, setShowQuest2] = useState(false); // ⭐️ Quest2 실행 상태
+  const [showQuest2, setShowQuest2] = useState(false); 
+  const [showQuest3, setShowQuest3] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showQuestModal, setShowQuestModal] = useState(false);
-  const [currentQuest, setCurrentQuest] = useState(1); // 현재 진행중인 퀘스트 단계 (1~3)
+  const [currentQuest, setCurrentQuest] = useState(1); 
   const [pendingQuest, setPendingQuest] = useState<1 | 2 | null>(null); // ⭐️ 어떤 퀘스트를 시작할지 구분
 
   const eastworldClient = new EastworldClient({ BASE: "/api" });
@@ -63,17 +65,35 @@ export const GameManager = () => {
     fetchSession();
   }, []);
 
-  // ⭐️ Quest2 시작 신호(PubSub) 구독
   useEffect(() => {
-    const token = PubSub.subscribe(Topics.startQuest2, () => {
-      // 여기서 확인 모달을 띄우든, 바로 Quest2 컴포넌트를 열든 선택
-      setShowConfirm(true);        // “퀘스트 2 시작하시겠습니까?” 모달
-      setPendingQuest(2);
+    const token = PubSub.subscribe(Topics.endGame, (_c, payload) => {
+      setEndResult(payload as ResultScreenProps);
     });
     return () => {
       PubSub.unsubscribe(token);
     };
   }, []);
+
+  // Quest2 시작 신호 구독
+  useEffect(() => {
+    const subs = [
+      PubSub.subscribe(Topics.startQuest1, () => {
+        setPendingQuest(1);
+        setShowConfirm(true);
+      }),
+      PubSub.subscribe(Topics.startQuest2, () => {
+        setPendingQuest(2);
+        setShowConfirm(true);
+      }),
+      /*PubSub.subscribe(Topics.startQuest3, () => {
+        setPendingQuest(3);
+        setShowConfirm(true);
+      }),*/
+    ];
+
+    return () => subs.forEach((s) => PubSub.unsubscribe(s));
+  }, []);
+
 
 
   // endGame 이벤트 수신
@@ -230,7 +250,15 @@ export const GameManager = () => {
             onYes={() => {
               setShowConfirm(false);
               if (pendingQuest === 1) setShowQuest1(true);
-              if (pendingQuest === 2) setShowQuest2(true);
+              if (pendingQuest === 2) {
+                PubSub.publish(Topics.giveKeysToDom);   
+                setShowQuest2(true);                    
+              }
+              /*if (pendingQuest === 3) {
+                PubSub.publish(Topics.giveKeysToDom);
+                setShowQuest3(true);
+              }*/
+              
               setPendingQuest(null);
             }}
             onNo={() => setShowConfirm(false)}
@@ -244,27 +272,35 @@ export const GameManager = () => {
           />
 
           {/* Quest 1 */}
-          <Quest1MiniGame
-            isOpen={showQuest1}
-            onClose={() => setShowQuest1(false)}
-            onFinish={() => {
-              setShowQuest1(false);
-              handleQuestComplete();
-            }}
-            mode="edu"
-            incomeKRW={1_800_000}
-          />
-
-          {/* ⭐️ Quest 2 */}
-          {showQuest2 && (
-            <Quest2
-              onClose={() => setShowQuest2(false)}
+          {showQuest1 && (
+            <Quest1
+              isOpen={true}
+              onClose={() => {
+                setShowQuest1(false);
+                PubSub.publish(Topics.giveKeysToGame);
+              }}
               onFinish={() => {
-                setShowQuest2(false);
+                setShowQuest1(false);
+                PubSub.publish(Topics.giveKeysToGame);
                 handleQuestComplete();
               }}
             />
           )}
+          {/* ⭐️ Quest 2 */}
+          {showQuest2 && (
+            <Quest2
+              onClose={() => {
+                setShowQuest2(false);
+                PubSub.publish(Topics.giveKeysToGame); 
+              }}
+              onFinish={() => {
+                setShowQuest2(false);
+                PubSub.publish(Topics.giveKeysToGame); 
+                handleQuestComplete();
+              }}
+            />
+          )}
+
 
           <ChatModal
             eastworldClient={eastworldClient}

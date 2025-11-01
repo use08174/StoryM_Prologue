@@ -1,80 +1,99 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Quest2Dialog from "./Quest2Dialog";
 import MissionOverlay from "./MissionOverlay";
-import { quest2Scenes } from "./Quest2Scenes";
+import MissionChoice from "./MissionChoice";
+import ChoiceFlow from "./ChoiceFlow";
 
 type Quest2Props = {
   onClose?: () => void;
   onFinish?: () => void;
 };
 
-export default function Quest2({ onClose, onFinish }: Quest2Props) {  const [showMissionStart, setShowMissionStart] = useState(true);
-  const [showMissionComplete, setShowMissionComplete] = useState(false);
-  const [sceneIndex, setSceneIndex] = useState(0);
-  const [currentScene, setCurrentScene] = useState(quest2Scenes[0]);
+/**
+ * 단계
+ * 0: (대기)
+ * 1: 부동산 중개인: "이제 같이 집 보러..."
+ * 2: 상단 MISSION(노란)
+ * 3: 부동산 중개인: "이 집은 어떠세요?"
+ * 4: MISSION 1 + 사진1 + 선택지(창문/싱크대/화장실)
+ */
+export default function Quest2({ onClose, onFinish }: Quest2Props) {
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
+  const [activeChoice, setActiveChoice] = useState<null | 1 | 2 | 3>(null);
 
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Enter") {
-        if (showMissionStart) {
-          // 처음 Mission 시작 닫기
-          setShowMissionStart(false);
-          return;
-        }
-
-        if (showMissionComplete) {
-          // Mission Complete 닫기
-          setShowMissionComplete(false);
-          setSceneIndex((prev) => Math.min(prev + 1, quest2Scenes.length - 1));
-          return;
-        }
-
-        setSceneIndex((prev) => Math.min(prev + 1, quest2Scenes.length - 1));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === "Space" || e.key === "Enter") {
+        if (activeChoice !== null) return; // 선택 흐름 중에는 글로벌 진행 금지
+        e.preventDefault();
+        setStep((prev) => (prev < 4 ? ((prev + 1) as 0 | 1 | 2 | 3 | 4) : 4));
       }
+      if (e.code === "Backspace") {
+        if (activeChoice !== null) {
+          setActiveChoice(null); // 선택 흐름 닫고 선택지 복귀
+          return;
+        }
+        e.preventDefault();
+        setStep((prev) => (prev > 0 ? ((prev - 1) as 0 | 1 | 2 | 3 | 4) : 0));
+      }
+      if (e.code === "Escape" && onClose) onClose();
     };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeChoice, onClose]);
 
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [showMissionStart, showMissionComplete]);
-
-  useEffect(() => {
-    const scene = quest2Scenes[sceneIndex];
-    setCurrentScene(scene);
-
-    // MISSION COMPLETE 표시
-    if (scene.mission) {
-      setShowMissionComplete(true);
-    }
-  }, [sceneIndex]);
+  const handleSelect = (n: 1 | 2 | 3) => setActiveChoice(n);
 
   return (
     <>
-      {/* 🔸 MISSION 시작 오버레이 */}
-      {showMissionStart && (
+      {/* 상단 오버레이 */}
+      {step === 2 && (
         <MissionOverlay
           title="MISSION"
-          text={`부동산 중개인이 추천하는 세 가지 매물을 꼼꼼히 점검해 보고,\n하자가 없는 좋은 매물을 찾아 선택하세요.`}
+          text={`부동산 중개인이 추천하는 세 가지 매물을 꼼꼼히 점검해 보고,\n그 중 하자가 없는 좋은 매물을 찾아 선택하세요.`}
           reward="성공 시 보상: 경험치 100, 체크리스트 카드"
+          tone="yellow"
         />
       )}
 
-      {/* 🔸 MISSION COMPLETE 오버레이 */}
-      {showMissionComplete && (
+      {step === 4 && activeChoice === null && (
         <MissionOverlay
-          title="MISSION COMPLETE!"
-          text={`하자가 없는 좋은 매물을 찾았습니다!\n가계약을 진행하세요.`}
-          reward="보상: 경험치 100, 체크리스트 카드 획득"
+          title="MISSION 1"
+          text="첫 번째 매물 자세히 살펴보기"
+          imageSrc="/assets/quest2_scenes/room1_main.png"
+          tone="white"
         />
       )}
 
-      {/* 🔸 대사창 */}
-      {!showMissionStart && !showMissionComplete && (
+      {/* 하단 말풍선 */}
+      {step === 1 && (
         <Quest2Dialog
-          speaker={"speaker" in currentScene ? currentScene.speaker : undefined}
-          text={currentScene.text}
-          mission={"mission" in currentScene ? currentScene.mission : undefined}
-          end={sceneIndex === quest2Scenes.length - 1}
+          speaker="부동산 중개인"
+          text="자, 그럼 이제 같이 집을 보러 가볼까요?"
         />
+      )}
+
+      {step === 3 && (
+        <Quest2Dialog
+          speaker="부동산 중개인"
+          text={`이 집은 어떠세요? 햇볕이 아주 잘 드는 남향이에요.\n요즘 이렇게 좋은 매물 잘 안 나옵니다.`}
+        />
+      )}
+
+      {/* 선택지 */}
+      {step === 4 && activeChoice === null && (
+        <MissionChoice
+          title="첫번째 매물"
+          question="어디를 먼저 살펴볼까요?"
+          options={["창문", "싱크대", "화장실"]}
+          onSelect={(idx) => handleSelect((idx + 1) as 1 | 2 | 3)}
+          enableKeySelect
+        />
+      )}
+
+      {/* 선택 흐름 */}
+      {activeChoice !== null && (
+        <ChoiceFlow type={activeChoice} onClose={() => setActiveChoice(null)} />
       )}
     </>
   );
