@@ -99,7 +99,7 @@ function mulberry32(seed:number){
 }
 
 // ============= 컴포넌트 =============
-export default function Quest1MiniGame({
+export default function Quest1({
   isOpen,
   onClose,
   onFinish,

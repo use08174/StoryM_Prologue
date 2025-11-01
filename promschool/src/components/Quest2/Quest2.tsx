@@ -60,7 +60,7 @@ export default function Quest2({ onClose, onFinish }: Quest2Props) {
         <MissionOverlay
           title="MISSION 1"
           text="첫 번째 매물 자세히 살펴보기"
-          imageSrc="/assets/quest2/first_property.png"  // 사진1 경로
+          imageSrc="/assets/quest2_scenes/room1_main.png"
           tone="white"
         />
       )}
