@@ -1,173 +1,90 @@
-// import {
-//   Box,
-//   Image,
-//   VStack,
-//   Center,
-//   Text,
-//   AspectRatio,
-//   Stack,
-//   Button,
-// } from "@chakra-ui/react";
-// import { ArrowForwardIcon } from "@chakra-ui/icons";
-// import { useNavigate } from "react-router-dom";
-
-// export const Landing = () => {
-//   const navigate = useNavigate();
-
-//   return (
-//     <Center height="100vh" width="100vw">
-//       <Stack
-//         width="80vw"
-//         maxWidth={"1700px"}
-//         alignItems="stretch"
-//         borderRadius="xl"
-//         overflow="hidden"
-//         boxShadow="lg"
-//         dropShadow={"2xl"}
-//         gap={"0"}
-//         direction={{ base: "column-reverse", xl: "row" }}
-//       >
-//         <Box
-//           bg="white"
-//           padding={{ base: "3", xl: "4" }}
-//           boxShadow="xl"
-//           flex="1"
-//         >
-//           <VStack height="100%">
-//             <VStack
-//               spacing={{ base: "2", xl: "4" }}
-//               flex="1"
-//               justifyContent="center"
-//             >
-//               <Image
-//                 src="/assets/sprites/dead_harrington.png"
-//                 height="30%"
-//                 width="30%"
-//                 margin="2vw"
-//               />
-//               <Text
-//                 fontFamily="aurora"
-//                 fontSize="6xl"
-//                 align={"center"}
-//                 margin="0 1vw 0 1vw"
-//               >
-//                 Detective
-//                 <br />
-//                 Prometheus
-//               </Text>
-//             </VStack>
-
-//             <VStack
-//               spacing={{ base: "1", xl: "3" }}
-//               flex="1"
-//               justifyContent="center"
-//               maxWidth="100%"
-//               marginTop="3vh"
-//             >
-//               <Box
-//                 padding={{ base: "2", xl: "5" }}
-//                 bgColor="black"
-//                 borderRadius="md"
-//                 boxShadow="md"
-//                 marginBottom={{ base: "1", xl: "3" }}
-//                 maxWidth="100%"
-//                 minWidth={"250px"}
-//                 width="85%"
-//                 flexDirection="column"
-//                 display="flex"
-//                 alignItems="center"
-//                 justifyContent="flex-start"
-//               >
-//                 <Text
-//                   fontSize="4xl"
-//                   color={"white"}
-//                   marginBottom={6}
-//                   fontFamily="threat"
-//                 >
-//                   Play
-//                 </Text>
-//                 <VStack
-//                   spacing={{ base: "3", xl: "6" }}
-//                   fontFamily={"azonix"}
-//                   marginBottom={3}
-//                 >
-//                   <Button
-//                     width="100%"
-//                     size="lg"
-//                     colorScheme="red"
-//                     rightIcon={<ArrowForwardIcon />}
-//                     onClick={() => navigate("/game")}
-//                   >
-//                     Start
-//                   </Button>
-//                 </VStack>
-//               </Box>
-//             </VStack>
-//             <Center>
-//               <Button
-//                 as="a"
-//                 href="https://www.github.com/mluogh/grontown"
-//                 target="_blank"
-//                 rel="noopener noreferrer"
-//                 leftIcon={
-//                   <Image
-//                     src="/assets/web/github-mark.png"
-//                     height={{ base: "20px", xl: "30px" }}
-//                   />
-//                 }
-//                 size={{ base: "xs", xl: "sm" }}
-//                 bg={"white"}
-//                 textColor={"black"}
-//               >
-//                 GitHub
-//               </Button>
-//             </Center>
-//           </VStack>
-//         </Box>
-//         <AspectRatio flex="4" ratio={1350 / 1150}>
-//           <img
-//             src="/assets/web/Newspaper.png"
-//             alt="Newspaper"
-//             style={{ width: "100%", height: "100%" }}
-//           />
-//         </AspectRatio>
-//       </Stack>
-//     </Center>
-//   );
-// };
-
-// export default Landing;
-
-import { Box, Button } from "@chakra-ui/react";
+import { Box, Button, HStack, IconButton, Image, VStack } from "@chakra-ui/react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useBgm } from "../BgmProvider"; // ⬅️ 추가
+
+const ICONS = {
+  title: "/assets/icons/prologue_title.png",
+  setting: "/assets/icons/setting.png",
+  play: "/assets/icons/play.png",
+  credit: "/assets/icons/credit.png",
+};
+
+// 인라인 사운드 아이콘
+const SoundIcon = ({ muted = false, size = 24 }: { muted?: boolean; size?: number }) => (
+  <Box as="svg" width={size} height={size} viewBox="0 0 30 30" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={0.95}>
+    <path d="M11 5L6 9H3v6h3l5 4V5z" fill="white" stroke="white" />
+    {!muted ? (<><path d="M15 9a3 3 0 010 6" /><path d="M17.5 7a6 6 0 010 10" /></>) : (<><line x1="15.5" y1="8.5" x2="20.5" y2="13.5" /><line x1="20.5" y1="8.5" x2="15.5" y2="13.5" /></>)}
+  </Box>
+);
 
 export const Landing = () => {
   const navigate = useNavigate();
+  const { muted, setMuted, play } = useBgm(); // ⬅️ Provider 상태 사용
+
+  const ensurePlay = async () => {
+    await play().catch(() => {});
+  };
 
   return (
-    // 화면 전체를 덮는 컨테이너 Box입니다.
     <Box
+      as="main"
       height="100vh"
       width="100vw"
+      position="relative"
       display="flex"
       alignItems="center"
       justifyContent="center"
-      // 여기에 배경 이미지 스타일을 적용합니다.
-      bgImage="url('/assets/sprites/prologue_main.jpeg')" // <-- 사용할 이미지 경로로 변경해주세요.
+      bgImage="url('/assets/sprites/prologue_main.png')"
       bgSize="cover"
       bgPosition="center"
+      bgRepeat="no-repeat"
+      _before={{ content: '""', position: "absolute", inset: 0, bgGradient: "linear(to-b, rgba(40,20,80,0.25), rgba(20,10,40,0.35))" }}
     >
-      {/* 중앙에 위치할 게임 시작 버튼입니다. */}
-      <Button
-        size="lg"
-        colorScheme="red" // 버튼 색상은 원하는 테마로 변경 가능합니다.
-        fontSize="2xl"
-        paddingX="12"
-        paddingY="8"
-        onClick={() => navigate("/prologue")} // 클릭 시 '/game' 경로로 이동합니다.
+      {/* 우상단 사운드 토글 — Provider 상태로 제어 */}
+      <IconButton
+        aria-label={muted ? "Unmute" : "Mute"}
+        onClick={() => setMuted(!muted)}
+        position="absolute"
+        top={{ base: 3, md: 5 }}
+        right={{ base: 3, md: 5 }}
+        variant="unstyled"
+        minW="auto"
+        _focus={{ boxShadow: "none" }}
+        _hover={{ filter: "brightness(1.15)" }}
       >
-        게임 시작
-      </Button>
+        <SoundIcon muted={muted} size={20} />
+      </IconButton>
+
+      {/* 중앙 컨텐츠(기존 레이아웃 그대로) */}
+      <VStack
+        spacing={{ base: 4, md: 6 }}
+        zIndex={1}
+        maxW="min(900px, 88vw)"
+        transform={{ base: "translateY(-5vh)", md: "translateY(-5vh)" }}
+      >
+        <Image
+          src={ICONS.title}
+          alt="프롤로그"
+          maxW={{ base: "56vw", sm: "48vw", md: "400px", lg: "280px" }}
+          maxH={{ base: "80px", md: "110px" }}
+          draggable={false}
+          loading="eager"
+          userSelect="none"
+        />
+
+        <HStack spacing={{ base: 5, md: 10 }} mt={{ base: 100, md: 100, lg: 130 }}>
+          <Button variant="unstyled" onClick={() => { ensurePlay(); navigate("/setting"); }}>
+            <Image src={ICONS.setting} alt="SETTING" maxH={{ base: "16px", sm: "20px", md: "22px" }} draggable={false} />
+          </Button>
+          <Button variant="unstyled" onClick={() => { ensurePlay(); navigate("/auth"); }}>
+            <Image src={ICONS.play} alt="PLAY" maxH={{ base: "40px", sm: "44px", md: "48px" }} draggable={false} />
+          </Button>
+          <Button variant="unstyled" onClick={() => { ensurePlay(); navigate("/credit"); }}>
+            <Image src={ICONS.credit} alt="CREDIT" maxH={{ base: "17px", sm: "21px", md: "23px" }} draggable={false} />
+          </Button>
+        </HStack>
+      </VStack>
     </Box>
   );
 };

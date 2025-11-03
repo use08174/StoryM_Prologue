@@ -5,7 +5,7 @@ import os
 from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-
+from pathlib import Path
 router = APIRouter(prefix="/youth-policy", tags=["Youth Policy"])
 
 # 부동산 관련 검색 가능한 키워드들
@@ -1056,6 +1056,9 @@ if not parser.has_section("youth_policy"):
 elif not parser.has_option("youth_policy", "api_key"):
     print(f"[YouthPolicy] 경고: config.ini의 [youth_policy] 섹션에 api_key가 없습니다. 경로: {config_path}")
 
+config_path = Path(__file__).parent / "config.ini"
+parser.read(config_path)
+#parser.read("config.ini")
 api_key = parser.get("youth_policy", "api_key", fallback="YOUR_API_KEY")
 # redirect_uri는 선택적 (온통청년 포털에서 등록된 경우에만 필요)
 redirect_uri = parser.get("youth_policy", "redirect_uri", fallback=None)

@@ -1,0 +1,14 @@
+.py[cod]
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.pdm-python
+dump.rdb
+pdm.lock
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+pyproject.toml
+.env

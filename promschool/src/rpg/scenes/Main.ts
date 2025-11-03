@@ -1,15 +1,14 @@
 import Phaser from "phaser";
-
 import { key } from "../data";
 import { Player } from "../sprites";
 import { isProduction } from "env";
 import { Npc } from "rpg/sprites/Npc";
 import Topics from "rpg/data/topics";
 import characters from "rpg/data/characters";
-import evidence from "rpg/data/evidence";
 import { Evidence } from "rpg/sprites/Evidence";
 import { getGameState } from "rpg/data/persistence";
-// import PubSub from "pubsub-js"; // 전역이 아니면 주석 해제
+import PubSub from "pubsub-js";
+
 
 type TilesetDef = { name: string; image: string; extruded?: boolean };
 
@@ -68,6 +67,15 @@ export default class Main extends Phaser.Scene {
   private npcs: Npc[] = [];
   private evidences: Evidence[] = [];
   private isTransitioning = false;
+  private spaceKey!: Phaser.Input.Keyboard.Key;
+  private quest1!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
+  private quest2!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
+  private quest3!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
+  private activeQuestZone: number | null = null;
+  private questStarted: boolean = false;
+
+
+
 
   constructor() {
     super(key.scene.main);
@@ -80,7 +88,7 @@ export default class Main extends Phaser.Scene {
 
     const { map, collisionGroup, collisionTileLayers } = this.createMap(startMapKey);
 
-    // 스폰 찾기: objectGroups를 순회하며 첫 매치 사용
+    // 스폰 찾기
     const spawnName = data.spawnName ?? cfg.spawnName;
     let spawnPoint: any | undefined;
     for (const group of cfg.objectGroups) {
@@ -91,7 +99,7 @@ export default class Main extends Phaser.Scene {
 
     this.player = new Player(this, spawnPoint.x!, spawnPoint.y!);
 
-    // 타일 충돌 레이어(복수) 연결
+    // 충돌 연결
     for (const tl of collisionTileLayers) {
       this.physics.add.collider(this.player, tl);
     }
@@ -99,11 +107,90 @@ export default class Main extends Phaser.Scene {
     this.createInteractables(map, collisionGroup, cfg);
     this.player.setUpSensingNpcs(this.npcs);
     this.player.setUpSensingEvidence(this.evidences);
-    this.player.setUpEvents(map);
+    // this.player.setUpEvents(map);
 
     this.setupPubSub();
     this.renderDebug();
+
+    // ===============================
+    // 여기서부터 Quest 관련 추가 (Quest1~3)
+
+    this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    const createQuestZone = (
+      x: number,
+      y: number,
+      label: string,
+      questId: number
+    ) => {
+      const zone = this.add.zone(x, y, 200, 160).setOrigin(0.5);
+      this.physics.add.existing(zone, true);
+
+      const text = this.add
+        .text(
+          x,
+          y - 80,
+          label,
+          {
+            fontSize: "13px",
+            color: "#ffffff",
+            backgroundColor: "rgba(0,0,0,0.7)",
+            padding: { left: 10, right: 10, top: 6, bottom: 6 },
+            align: "center",
+          }
+        )
+        .setOrigin(0.5)
+        .setDepth(2000)
+        .setScrollFactor(1)
+        .setVisible(true);
+
+      // 디버그 박스
+      /*this.add.graphics()
+        .lineStyle(2, 0xff0000)
+        .strokeRectShape(zone.getBounds());*/
+
+      // 살짝 깜빡이는 효과 (선택사항)
+      this.tweens.add({
+        targets: text,
+        alpha: { from: 1, to: 0.6 },
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+      });
+
+      return { zone, text, questId };
+    };
+    this.quest1 = createQuestZone(
+      650,
+      708,
+      "🚇 이곳은 퀘스트 1 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
+      1
+    );
+    this.quest2 = createQuestZone(
+      -212,
+      -82,
+      "🏠 이곳은 퀘스트 2 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
+      2
+    );
+    this.quest3 = createQuestZone(
+       150,
+      -82,
+      "🏢 이곳은 퀘스트 3 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
+      3
+    );
+    this.activeQuestZone = null;
+    this.questStarted = false;
+
+    [this.quest1, this.quest2, this.quest3].forEach(({ zone, questId }) => {
+      this.physics.add.overlap(this.player, zone, () => {
+        if (!this.questStarted) this.activeQuestZone = questId;
+      });
+    });
+
+
+
+    
   }
+
 
   private createMap(mapKey: string): {
     map: Phaser.Tilemaps.Tilemap;
@@ -250,7 +337,7 @@ export default class Main extends Phaser.Scene {
   ) {
     // NPC / 증거물 (필요 시 복구)
     for (const [characterName, characterDef] of Object.entries(characters)) {
-      if (characterName === "detective") continue;
+      if (characterName === "main_girl") continue;
       if (getGameState().goneNpcs.has(characterName)) continue;
 
       // objectGroups를 돌며 이름으로 위치 찾기
@@ -345,21 +432,30 @@ export default class Main extends Phaser.Scene {
   private setupPubSub() {
     PubSub.subscribe(Topics.giveKeysToDom, () => {
       if (this.input.keyboard && this.input.keyboard.enabled) {
+        try {
+          if ((this.input.keyboard as any)._capture) {
+            this.input.keyboard.disableGlobalCapture();
+          }
+        } catch (err) {
+          console.warn("[Phaser] disableGlobalCapture skipped:", err);
+        }
         this.input.keyboard.enabled = false;
-        this.input.keyboard.disableGlobalCapture();
       }
     });
+
     PubSub.subscribe(Topics.giveKeysToGame, () => {
       if (this.input.keyboard && !this.input.keyboard.enabled) {
         this.input.keyboard.enabled = true;
         try {
-          this.input.keyboard.enableGlobalCapture();
+          if ((this.input.keyboard as any)._capture) {
+            this.input.keyboard.enableGlobalCapture();
+          }
         } catch (error) {
-          console.warn("Failed to enable global keyboard capture:", error);
+          console.warn("[Phaser] enableGlobalCapture skipped:", error);
         }
       }
-    });
-  }
+  });
+}
 
   private renderDebug() {
     if (isProduction) return;
@@ -372,5 +468,29 @@ export default class Main extends Phaser.Scene {
 
   update() {
     this.player.update();
+
+    if (this.activeQuestZone && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+      this.questStarted = true;
+      const questId = this.activeQuestZone;
+      console.log(`Quest ${questId} 시작`);
+      PubSub.publish(Topics[`startQuest${questId}` as keyof typeof Topics]);
+    }
+
+    if (this.activeQuestZone) {
+      const activeQuest = [this.quest1, this.quest2, this.quest3].find(
+        (q) => q.questId === this.activeQuestZone
+      );
+      if (
+        activeQuest &&
+        !Phaser.Geom.Intersects.RectangleToRectangle(
+          this.player.getBounds(),
+          activeQuest.zone.getBounds()
+        )
+      ) {
+        this.activeQuestZone = null;
+      }
+    }
   }
+
+
 }

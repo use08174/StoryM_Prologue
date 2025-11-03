@@ -55,7 +55,7 @@ const ChatModal = (props: ChatModalProps) => {
     props.eastworldClient.gameSessions.startChat(
       props.sessionId,
       EnglishToKorean(agentName),
-      EnglishToKorean(characters.detective.eastworldId!),
+      EnglishToKorean(characters.main_girl.eastworldId!),
       { history: [], conversation: {} },
     );
   }, [agentName]);
