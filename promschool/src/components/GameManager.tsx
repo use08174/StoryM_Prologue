@@ -10,7 +10,7 @@ import ChatModal from "./ChatModal";
 import EvidenceModal from "./EvidenceModal";
 import QuestStatusModal from "./QuestStatusModal";
 import { EastworldClient } from "eastworld-client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Game } from "./Game";
 import PoliceModal from "./PoliceModal";
 import ResultScreen, { ResultScreenProps } from "./ResultScreen";
@@ -31,6 +31,7 @@ export const GameManager = () => {
   const [endResult, setEndResult] = useState<ResultScreenProps>();
   const [exp, setExp] = useState(0);
   const [alarm, setAlarm] = useState(0);
+  const [paused, setPaused] = useState(false); // ✅ 알람 동안 입력/동작 차단
   const [showMsg, setShowMsg] = useState(false);
   const [showQuest1, setShowQuest1] = useState(false);
   const [showQuest2, setShowQuest2] = useState(false); 
@@ -40,11 +41,53 @@ export const GameManager = () => {
   const [currentQuest, setCurrentQuest] = useState(1); 
   const [pendingQuest, setPendingQuest] = useState<1 | 2 | null>(null); // ⭐️ 어떤 퀘스트를 시작할지 구분
 
+  const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
+  const [pendingAlarmSound, setPendingAlarmSound] = useState(false);
+
   const eastworldClient = new EastworldClient({ BASE: "/api" });
 
-  // 알람 효과
+
+   useEffect(() => {
+    alarmSoundRef.current = new Audio("/assets/sfx/notification.mp3"); // 경로만 맞추세요
+    alarmSoundRef.current.loop = false;
+    alarmSoundRef.current.volume = 0.7;
+
+    const unlock = async () => {
+      try {
+        if (!alarmSoundRef.current) return;
+        // 아주 짧게 재생 후 멈추면 브라우저가 오디오 사용을 허용 상태로 전환
+        await alarmSoundRef.current.play();
+        alarmSoundRef.current.pause();
+        alarmSoundRef.current.currentTime = 0;
+        if (pendingAlarmSound) {
+          setPendingAlarmSound(false);
+          await alarmSoundRef.current.play();
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        window.removeEventListener("pointerdown", unlock);
+        window.removeEventListener("keydown", unlock);
+      }
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+  }, [pendingAlarmSound]);
+
   useEffect(() => {
-    const t = setTimeout(() => setAlarm(1), 1200);
+    const t = setTimeout(() => {
+      setAlarm(1);
+      setPaused(true);
+      // 사운드 재생 시도 (막히면 pending 플래그)
+      const tryPlay = async () => {
+        try {
+          await alarmSoundRef.current?.play();
+        } catch {
+          setPendingAlarmSound(true);
+        }
+      };
+      tryPlay();
+    }, 1200);
     return () => clearTimeout(t);
   }, []);
 
@@ -63,7 +106,7 @@ export const GameManager = () => {
     initGA();
     logStartGame();
     fetchSession();
-  }, []);
+  }, [pendingAlarmSound]);
 
   useEffect(() => {
     const token = PubSub.subscribe(Topics.endGame, (_c, payload) => {
@@ -127,21 +170,15 @@ export const GameManager = () => {
             position="absolute"
             top="15px"
             left="20px"
-            bg="rgba(255,255,255,0.9)"
-            borderRadius="xl"
-            px={3}
-            py={2}
-            boxShadow="md"
-            display="inline-flex"
-            alignItems="center"
             zIndex={10}
           >
             <Image
               src={`/assets/sprites/storym_exp_${exp}.png`}
               alt="exp-bar"
-              height="24px"
+              height="40px"
             />
           </Box>
+
 
           {/* 상단 버튼 그룹 */}
           <HStack
@@ -151,84 +188,53 @@ export const GameManager = () => {
             spacing={3}
             zIndex={10}
           >
-            {/* Phone 버튼 */}
+            {/* Phone 버튼 (그대로) */}
             <PhoneButton
               alarm={alarm}
               highlight={alarm > 0 && !showMsg}
               onClick={() => {
                 setShowMsg(true);
                 setAlarm(0);
+                setPaused(false);            // ✅ 버튼 클릭 시 일시정지 해제
+                PubSub.publish(Topics.giveKeysToDom);
               }}
             />
 
-            {/* Quest 버튼 */}
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              bg="rgba(255,255,255,0.9)"
-              borderRadius="xl"
-              px={3}
-              py={2}
-              boxShadow="md"
+            {/* Quest 아이콘만 */}
+            <Image
+              src="/assets/sprites/storym_scenario.png"
+              alt="quest"
+              boxSize="60px"
               cursor="pointer"
-              _hover={{ bg: "rgba(255,255,255,1)" }}
-              minW="70px"
+              _hover={{ transform: "scale(1.06)" }}
               onClick={() => setShowQuestModal(true)}
-            >
-              <Image src="/assets/sprites/storym_scenario.png" alt="book" boxSize="30px" />
-              <Text fontSize="xs" fontWeight="bold" mt={1} color="black">
-                Quest
-              </Text>
-            </Box>
+            />
 
-            {/* Book 버튼 */}
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              bg="rgba(255,255,255,0.9)"
-              borderRadius="xl"
-              px={3}
-              py={2}
-              boxShadow="md"
+            {/* Info 아이콘만 */}
+            <Image
+              src="/assets/sprites/storym_info.png"
+              alt="info"
+              boxSize="60px"
               cursor="pointer"
-              _hover={{ bg: "rgba(255,255,255,1)" }}
-              minW="70px"
-            >
-              <Image src="/assets/sprites/storym_info.png" alt="book" boxSize="30px" />
-              <Text fontSize="xs" fontWeight="bold" mt={1} color="black">
-                Info
-              </Text>
-            </Box>
+              _hover={{ transform: "scale(1.06)" }}
+              // onClick 핸들러 필요하면 여기에 추가
+            />
 
-            {/* Settings 버튼 */}
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              bg="rgba(255,255,255,0.9)"
-              borderRadius="xl"
-              px={3}
-              py={2}
-              boxShadow="md"
+            {/* Settings 아이콘만 */}
+            <Image
+              src="/assets/sprites/storym_settings.png"
+              alt="settings"
+              boxSize="60px"
               cursor="pointer"
-              _hover={{ bg: "rgba(255,255,255,1)" }}
-              minW="70px"
-            >
-              <Image src="/assets/sprites/storym_settings.png" alt="settings" boxSize="30px" />
-              <Text fontSize="xs" fontWeight="bold" mt={1} color="black">
-                Settings
-              </Text>
-            </Box>
+              _hover={{ transform: "scale(1.06)" }}
+              // onClick 핸들러 필요하면 여기에 추가
+            />
           </HStack>
+
 
           {/* 메인 게임 */}
           <Center width="100%" height="100%">
-            <Game />
+            <Game paused={paused} />
           </Center>
 
           {/* 메시지 모달 */}

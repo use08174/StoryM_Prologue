@@ -125,23 +125,15 @@ export default class Main extends Phaser.Scene {
       const zone = this.add.zone(x, y, 200, 160).setOrigin(0.5);
       this.physics.add.existing(zone, true);
 
-      const text = this.add
-        .text(
-          x,
-          y - 80,
-          label,
-          {
-            fontSize: "13px",
-            color: "#ffffff",
-            backgroundColor: "rgba(0,0,0,0.7)",
-            padding: { left: 10, right: 10, top: 6, bottom: 6 },
-            align: "center",
-          }
-        )
-        .setOrigin(0.5)
-        .setDepth(2000)
-        .setScrollFactor(1)
-        .setVisible(true);
+      const text = this.add.text(x, y, label, {
+        fontSize: '13px',
+        color: '#ffffff',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: { left: 10, right: 10, top: 6, bottom: 6 },
+        align: 'center',
+        resolution: 2, // ⬅️ 효과 큼 (1~3 시도)
+      }).setOrigin(0.5).setDepth(2000).setScrollFactor(1);
+
 
       // 디버그 박스
       /*this.add.graphics()

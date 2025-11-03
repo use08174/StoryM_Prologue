@@ -1,4 +1,4 @@
-import { Box, Image, Text } from "@chakra-ui/react";
+import { Box, Image } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
 import { ReactNode } from "react";
 
@@ -14,65 +14,63 @@ const pulse = keyframes`
   100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
 `;
 
-const arrowBounce = keyframes`
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-  100% { transform: translateY(0); }
-`;
-
 type PhoneButtonProps = {
-  alarm: number;                 
-  highlight?: boolean;           
-  onClick?: () => void;          
-  label?: string;                
-  iconSrc?: string;              
-  rightAdornment?: ReactNode;    
+  alarm: number;
+  highlight?: boolean;
+  onClick?: () => void;
+  label?: string;          // 더 이상 사용하지 않지만, 타입은 호환 위해 유지
+  iconSrc?: string;
+  rightAdornment?: ReactNode;
 };
 
 export default function PhoneButton({
   alarm,
   highlight = false,
   onClick,
-  label = "Alarm",
+  // label = "Alarm",  // 라벨 사용 안 함
   iconSrc = "/assets/sprites/storym_phone.png",
   rightAdornment,
 }: PhoneButtonProps) {
   return (
     <Box position="relative">
       <Box
-        display="flex"
-        flexDirection="column"
+        as="button"
+        onClick={onClick}
+        display="inline-flex"
         alignItems="center"
         justifyContent="center"
-        bg="rgba(255,255,255,0.9)"
-        borderRadius="xl"
-        px={3}
-        py={2}
-        boxShadow="md"
+        // ⬇️ 하얀 박스 관련 스타일 제거
+        bg="transparent"
+        border="none"
+        borderRadius="0"
+        px={0}
+        py={0}
+        boxShadow="none"
         cursor="pointer"
-        _hover={{ bg: "rgba(255,255,255,1)" }}
         position="relative"
-        minW="70px"
+        // minW="70px"  제거
+        _hover={{ transform: "scale(1.06)" }}
+        _active={{ transform: "scale(0.98)" }}
         animation={highlight ? `${wiggle} 900ms ease-in-out infinite` : undefined}
-        onClick={onClick}
       >
         {highlight && (
           <Box
             position="absolute"
             inset="-4px"
-            borderRadius="xl"
+            // 배경 없이 pulse만
+            borderRadius="12px"
             animation={`${pulse} 1.4s ease-out infinite`}
             pointerEvents="none"
           />
         )}
 
-        <Image src={iconSrc} alt="phone" boxSize="30px" />
+        <Image src={iconSrc} alt="phone" boxSize="60px" pointerEvents="none" />
 
         {alarm > 0 && (
           <Box
             position="absolute"
-            top="2px"
-            right="6px"
+            top="-2px"
+            right="-2px"
             bg="red.500"
             color="white"
             fontSize="xs"
@@ -86,11 +84,12 @@ export default function PhoneButton({
             {alarm}
           </Box>
         )}
-        <Text fontSize="xs" fontWeight="bold" mt={1} color="black">
-          {label}
-        </Text>
+
+        {/* 라벨 제거 */}
+        {/* <Text ...>{label}</Text> */}
+
         {rightAdornment}
-      </Box>    
+      </Box>
     </Box>
   );
 }

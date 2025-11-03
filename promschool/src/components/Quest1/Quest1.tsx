@@ -11,18 +11,18 @@ import {
   Badge,
   Divider,
 } from "@chakra-ui/react";
-
+import { PIXEL_PALETTE as C } from "../pixelpalette";
 
 type Props = {
   isOpen: boolean;
-  onClose: () => void;                     
-  onFinish: (report: Report) => void;      
+  onClose: () => void;
+  onFinish: (report: Report) => void;
   mode?: "edu" | "arcade";
-  incomeKRW?: number;                      
+  incomeKRW?: number;
 };
 
 type KPIs = { happy: number; health: number; stability: number };
-type Bag = Record<string, number>;         
+type Bag = Record<string, number>;
 type Drop = {
   key: string; emoji: string; color: string; price: number;
   x: number; y: number; vy: number; r: number;
@@ -35,15 +35,15 @@ type Report = {
   bag: Bag;
 };
 
-// ------------ 스타일(고정색) ------------
-const FRAME_BG = "#f7f7f5";
-const FRAME_BORDER = "#815b3a";
-const INNER_BORDER = "#c8a47f";
-const CARD_WHITE = "#ffffff";
-const TEXT_DARK = "#263238";
-const LABEL_BG = "#f0e2cc";
-const LABEL_TEXT = "#5b4633";
-const GLASS_WHITE = "#ffffffee";
+// ------------ 테마 색상 (팔레트 기반) ------------
+const FRAME_BG = `${C.tileLight}`;          // 바깥 프레임 배경
+const FRAME_BORDER = `${C.border}`;         // 바깥 프레임 테두리
+const INNER_BORDER = `${C.border}`;         // 내부 카드 테두리
+const CARD_BG = `${C.ribbon}`;              // 카드/패널 배경
+const TEXT_INK = `${C.ink}`;                // 기본 텍스트
+const LABEL_BG = `${C.ribbon}`;             // 라벨 배경
+const LABEL_TEXT = `${C.ink}`;              // 라벨 텍스트
+const GLASS_BG = `${C.tileLight}F2`;        // 유리 카드 느낌
 
 // ------------ 게임 설정 ------------
 const CONFIG = {
@@ -313,18 +313,18 @@ export default function Quest1({
     const ctx = cvs.getContext("2d")!;
     ctx.clearRect(0,0,st.width,st.height);
 
-    // 밝은 배경 그라데이션
+    // 보라/핑크 그라데이션 배경
     const grad = ctx.createLinearGradient(0,0,0,st.height);
-    grad.addColorStop(0, "#f8fafc"); // slate-50
-    grad.addColorStop(1, "#e2e8f0"); // slate-200
+    grad.addColorStop(0, C.tileLight);
+    grad.addColorStop(1, C.tileMid);
     ctx.fillStyle = grad;
     ctx.fillRect(0,0,st.width,st.height);
 
     // 은은한 라인
-    ctx.strokeStyle = "#cbd5e1";
+    ctx.strokeStyle = C.border;
     ctx.lineWidth = 1;
     for(let y=40;y<st.height-40;y+=40){
-      ctx.globalAlpha = 0.25;
+      ctx.globalAlpha = 0.15;
       ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(st.width,y); ctx.stroke();
     }
     ctx.globalAlpha = 1;
@@ -338,9 +338,9 @@ export default function Quest1({
 
   const drawCart = (ctx:CanvasRenderingContext2D, cart:{x:number;y:number;w:number;h:number}) => {
     const {x,y,w,h} = cart;
-    ctx.fillStyle = "#38bdf8"; // sky-400
+    ctx.fillStyle = TEXT_INK;   // 보라 본체
     ctx.fillRect(x-w/2, y-h/2, w, h);
-    ctx.strokeStyle = "#0ea5e9"; // sky-500
+    ctx.strokeStyle = C.border; // 진보라 아치
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(x, y-h/2, 18, Math.PI, 0);
@@ -348,13 +348,16 @@ export default function Quest1({
   };
 
   const drawDrop = (ctx:CanvasRenderingContext2D, d:Drop) => {
-    roundRect(ctx, d.x-26, d.y-22, 52, 44, 12, true, true, CARD_WHITE, d.color);
-    ctx.font = "22px serif";
+    // 아이템 카드
+    roundRect(ctx, d.x-26, d.y-22, 52, 44, 10, true, true, CARD_BG, C.border);
+    ctx.font = "22px system-ui, Apple Color Emoji, Segoe UI Emoji";
     ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillStyle = "#0f172a";
+    ctx.fillStyle = TEXT_INK;
     ctx.fillText(d.emoji, d.x, d.y-2);
-    roundRect(ctx, d.x-20, d.y+10, 40, 16, 6, true, true, "#e2e8f0", "#cbd5e1");
-    ctx.fillStyle = "#334155";
+
+    // 가격 라벨
+    roundRect(ctx, d.x-20, d.y+10, 40, 16, 6, true, true, C.tileMid, C.border);
+    ctx.fillStyle = C.border;
     ctx.font = "10px system-ui";
     ctx.fillText(`${d.price}만`, d.x, d.y+18);
   };
@@ -391,43 +394,45 @@ export default function Quest1({
         top="50%"
         transform="translate(-50%, -50%)"
         bg={FRAME_BG}
-        border={`2px solid ${FRAME_BORDER}`}
-        borderRadius="22px"
-        boxShadow="0 10px 30px rgba(0,0,0,.25)"
+        border={`3px solid ${FRAME_BORDER}`}
+        borderRadius="18px"
+        boxShadow={`0 10px 30px ${C.shadow}`}
         pt="56px"
         px={4}
         pb={4}
         w={["92%", "950px"]}
       >
+        {/* 상단 퀘스트 라벨 */}
         <Box
           position="absolute"
-            top="10px"
-            left="14px"
-            bg={LABEL_BG}
-            border={`2px solid ${FRAME_BORDER}`}
-            borderRadius="10px"
-            px={3}
-            py={0.5}
-            zIndex={3}          
+          top="10px"
+          left="14px"
+          bg={LABEL_BG}
+          border={`3px solid ${FRAME_BORDER}`}
+          borderRadius="10px"
+          px={3}
+          py={0.5}
+          zIndex={3}
         >
-            <Text fontSize="sm" fontWeight="bold" color={LABEL_TEXT}>
+          <Text fontSize="sm" fontWeight="bold" color={LABEL_TEXT}>
             QUEST 1
-            </Text>
+          </Text>
         </Box>
 
         <Flex gap={4} align="stretch">
+          {/* 좌: 캔버스 카드 */}
           <Box
             position="relative"
-            bg={CARD_WHITE}
-            rounded="xl"
-            border={`2px solid ${INNER_BORDER}`}
+            bg={CARD_BG}
+            rounded="md"
+            border={`3px solid ${INNER_BORDER}`}
             p={2}
           >
             <canvas
               ref={canvasRef}
               width={900}
               height={520}
-              style={{ width: "620px", height: "358px", display:"block", borderRadius: 12 }}
+              style={{ width: "620px", height: "358px", display:"block", borderRadius: 8 }}
             />
             {/* 오버레이(시작/안내) */}
             {showOverlay && (
@@ -441,23 +446,27 @@ export default function Quest1({
                 justify="center"
               >
                 <VStack
-                  bg={GLASS_WHITE}
-                  rounded="xl"
-                  border={`2px solid ${INNER_BORDER}`}
+                  bg={GLASS_BG}
+                  rounded="md"
+                  border={`3px solid ${INNER_BORDER}`}
                   p={5}
                   maxW="520px"
                   textAlign="center"
                   spacing={3}
                 >
-                  <Heading size="md" color={TEXT_DARK}>
+                  <Heading size="md" color={TEXT_INK}>
                     장바구니를 ← → 로 움직여 과일(예산 항목)을 담아보세요!
                   </Heading>
-                  <Text color="#475569">
+                  <Text color={C.border}>
                     소득 한도({toKRW(incomeManwon)}) 안에서 필수 과일(주거·식비·통신)을 반드시 포함해야 합니다.
                   </Text>
                   <HStack pt={1}>
-                    <Button colorScheme="green" onClick={start}>시작하기</Button>
+                    <Button colorScheme="purple" onClick={start}>시작하기</Button>
                     <Button
+                      variant="outline"
+                      borderColor={C.border}
+                      color={C.border}
+                      _hover={{ bg: C.ribbon }}
                       onClick={() =>
                         alert(
                           "규칙\n1) 과일은 예산 항목입니다. 담으면 가격만큼 차감됩니다.\n2) 필수: 주거·식비·통신(각 1개 이상), 예산 초과는 담기지 않아요.\n3) 행복/건강/안정성 지수는 담은 항목으로 계산됩니다."
@@ -475,45 +484,53 @@ export default function Quest1({
           {/* 우: 사이드 패널 */}
           <VStack
             align="stretch"
-            bg={CARD_WHITE}
-            rounded="xl"
-            border={`2px solid ${INNER_BORDER}`}
+            bg={CARD_BG}
+            rounded="md"
+            border={`3px solid ${INNER_BORDER}`}
             p={3}
             minW="220px"
             spacing={3}
           >
             <HStack justify="space-between">
-              <Badge colorScheme="gray" rounded="full" px={2}>월급</Badge>
-              <Text fontWeight="bold">{toKRW(incomeManwon)}</Text>
+              <Badge colorScheme="purple" rounded="full" px={2}>월급</Badge>
+              <Text fontWeight="bold" color={TEXT_INK}>{toKRW(incomeManwon)}</Text>
             </HStack>
 
             <HStack justify="space-between">
               <Badge colorScheme="purple" rounded="full" px={2}>필수</Badge>
-              <Text>{reqCount}/{CONFIG.REQUIRED_KEYS.length}</Text>
+              <Text color={TEXT_INK}>{reqCount}/{CONFIG.REQUIRED_KEYS.length}</Text>
             </HStack>
 
             {overBudget && <Badge colorScheme="red">예산 초과!</Badge>}
 
-            <Divider/>
+            <Divider borderColor={C.border} opacity={0.3}/>
 
-            <Text fontSize="sm" color="#64748b">남은 예산</Text>
-            <Heading size="md">{toKRW(incomeManwon - spentManwon)}</Heading>
+            <Text fontSize="sm" color={C.border}>남은 예산</Text>
+            <Heading size="md" color={TEXT_INK}>{toKRW(incomeManwon - spentManwon)}</Heading>
 
             <VStack align="stretch" spacing={2} pt={2}>
-              <Text fontSize="sm" color="#64748b">행복 지수</Text>
-              <Progress value={kpis.happy} colorScheme="pink" rounded="full"/>
-              <Text fontSize="sm" color="#64748b">건강 지수</Text>
-              <Progress value={kpis.health} colorScheme="green" rounded="full"/>
-              <Text fontSize="sm" color="#64748b">안정성 지수</Text>
-              <Progress value={kpis.stability} colorScheme="blue" rounded="full"/>
+              <Text fontSize="sm" color={C.border}>행복 지수</Text>
+              <Progress value={kpis.happy} colorScheme="purple" rounded="full"/>
+              <Text fontSize="sm" color={C.border}>건강 지수</Text>
+              <Progress value={kpis.health} colorScheme="purple" rounded="full"/>
+              <Text fontSize="sm" color={C.border}>안정성 지수</Text>
+              <Progress value={kpis.stability} colorScheme="purple" rounded="full"/>
             </VStack>
 
             <HStack pt={2} justify="space-between">
-              <Button onClick={onClose}>닫기</Button>
-              <Button colorScheme="green" onClick={finish}>종료 & 리포트</Button>
+              <Button
+                variant="outline"
+                borderColor={C.border}
+                color={C.border}
+                _hover={{ bg: C.ribbon }}
+                onClick={onClose}
+              >
+                닫기
+              </Button>
+              <Button colorScheme="purple" onClick={finish}>종료 & 리포트</Button>
             </HStack>
 
-            <Text fontSize="xs" color="#94a3b8">
+            <Text fontSize="xs" color={C.border} opacity={0.7}>
               교육 모드: 고정 시퀀스 / 아케이드: 난수 드롭
             </Text>
           </VStack>
