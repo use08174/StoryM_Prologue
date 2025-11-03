@@ -15,4 +15,5 @@ httpx>=0.25.0
 fastapi-sso>=0.7.2
 python-jose>=3.3.0
 fastapi-limiter>=0.1.5
-
+bcrypt>=4.0.1
+sqlalchemy>=2.0.0
