@@ -175,3 +175,6 @@ game_defs/
 
 # api key
 config.ini
+
+
+app.db

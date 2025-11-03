@@ -5,10 +5,14 @@ import {
   FormLabel,
   Input,
   VStack,
+  Text,
+  Spinner,
+  useToast,
 } from "@chakra-ui/react";
 import { Global } from "@emotion/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiLogin, apiSignup, apiMe } from "../lib/api";
 
 // 픽셀 폰트(Press Start 2P)
 const PixelFontImporter = () => (
@@ -19,33 +23,83 @@ const PixelFontImporter = () => (
   />
 );
 
-// 이 컴포넌트를 App.tsx의 /auth 라우트에 연결해주세요.
 export const Auth = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+
   const [isRegister, setIsRegister] = useState(false); // 로그인/회원가입 폼 전환
-  const [email, setEmail] = useState("");
+
+  // 각각 필요한 입력 상태
+  const [id, setId] = useState("");
+  const [email, setEmail] = useState(""); // 회원가입 전용
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // UX 상태
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAuth = () => {
+  const handleAuth = async () => {
+  setError(null);
+
+  // (유효성 검사 부분은 동일...)
+  if (!id) return setError("아이디를 입력해주세요.");
+  if (isRegister && !email) return setError("이메일을 입력해주세요.");
+  if (!password) return setError("비밀번호를 입력해주세요.");
+  if (isRegister && password !== confirmPassword)
+    return setError("비밀번호가 일치하지 않습니다.");
+
+  try {
+    setLoading(true);
+    let token: string | null = null; // 👈 토큰을 저장할 변수
+
     if (isRegister) {
-      // --- 회원가입 로직 ---
-      if (password !== confirmPassword) {
-        console.error("비밀번호가 일치하지 않습니다.");
-        // (실제로는 alert() 대신 UI에 에러 메시지를 표시해야 합니다)
-        return;
+      // --- 회원가입 ---
+      await apiSignup({ id, email, password });
+      // toast({ title: "회원가입 완료!", description: "자동으로 로그인합니다.", status: "success" });
+
+      // [ ✅ 수정된 부분 ]
+      // 회원가입 후, 즉시 로그인 API를 호출해서 토큰을 받아옵니다.
+      const res = await apiLogin({ id, password });
+      if (res?.token) {
+        token = res.token;
+        localStorage.setItem("token", token);
+      } else {
+        // 회원가입은 성공했는데 로그인이 안되면 에러
+        throw new Error("회원가입은 성공했으나, 로그인에 실패했습니다.");
       }
-      console.log("회원가입 시도:", { email, password });
     } else {
-      // --- 로그인 로직 ---
-      // (실제 앱에서는 여기서 Firebase/서버로 로그인 요청을 보냅니다)
-      console.log("로그인 시도:", { email, password });
+      // --- 로그인 ---
+      const res = await apiLogin({ id, password });
+      if (res?.token) {
+        token = res.token; // 👈 변수에 토큰 저장
+        localStorage.setItem("token", token);
+      } else {
+         throw new Error("로그인에 성공했으나, 토큰을 받지 못했습니다.");
+      }
+      // toast({ title: "로그인 성공!", status: "success" });
     }
 
-    // 로그인/회원가입 성공 시 캐릭터 생성 페이지로 이동
+    // 로그인/회원가입 후 본인 정보 확인 (세션 or 토큰)
+    // [ ✅ 수정된 부분 ]
+    // localStorage에서 다시 읽는 대신, 방금 얻은 'token' 변수를 사용합니다.
+    await apiMe(token); // 👈 이제 token은 null이 아닙니다.
     navigate("/profile");
-  };
+  } catch (e: any) {
+    // [ ✅ 여기가 수정된 부분입니다 ]
+    if (isRegister) {
+      // 1. 회원가입 실패 시:
+      // "User ID already exists" 같은 구체적인 메시지를 보여주는 게 좋습니다.
+      setError("아이디가 이미 존재합니다. 다른 아이디를 사용해주세요.");
+    } else {
+      // 2. 로그인 실패 시:
+      // 백엔드 메시지("Invalid ID...") 대신, 원하는 멘트로 고정합니다.
+      setError("아이디 또는 비밀번호가 일치하지 않습니다.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 픽셀아트 입력 필드 스타일
   const pixelInputStyle = {
@@ -57,7 +111,7 @@ export const Auth = () => {
     _hover: { borderColor: "#fff" },
     _focus: { borderColor: "#fff", boxShadow: "none" },
     autoComplete: "off",
-  };
+  } as const;
 
   return (
     <>
@@ -77,15 +131,13 @@ export const Auth = () => {
         fontFamily="'Press Start 2P', monospace"
         overflowY="auto"
       >
-        {/* 뒷배경 어둡게 처리 */}
         <Box position="absolute" inset={0} bg="rgba(0,0,0,0.6)" zIndex={5} />
 
-        {/* 로그인/회원가입 팝업창 (Setting.tsx와 동일한 스타일) */}
         <VStack
-          as="form" // 폼으로 감싸기 (onSubmit 방지)
+          as="form"
           onSubmit={(e) => {
-            e.preventDefault(); // Enter키로 페이지 새로고침 방지
-            handleAuth();
+            e.preventDefault();
+            if (!loading) handleAuth();
           }}
           spacing={{ base: 4, md: 6 }}
           p={{ base: 6, md: 8 }}
@@ -99,32 +151,47 @@ export const Auth = () => {
           borderRadius="sm"
           zIndex={10}
           w="90vw"
-          maxW="480px" // Setting.tsx보다 폭을 조금 좁게
+          maxW="480px"
         >
-          {/* 제목 */}
-          <Box
-            fontSize={{ base: "lg", md: "xl" }}
-            color="#e4d5b7"
-            as="h1"
-            pb={2}
-          >
+          <Box fontSize={{ base: "lg", md: "xl" }} color="#e4d5b7" as="h1" pb={2}>
             {isRegister ? "회원가입" : "로그인"}
           </Box>
 
-          {/* 이메일 */}
+          {/* 에러 메시지 */}
+          {error && (
+            <Text fontSize="xs" color="pink.200">
+              {error}
+            </Text>
+          )}
+
+          {/* 아이디(공통) */}
           <FormControl>
             <FormLabel fontSize={{ base: "xs", md: "sm" }} mb={2}>
-              이메일:
+              아이디:
             </FormLabel>
             <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={id}
+              onChange={(e) => setId(e.target.value)}
               {...pixelInputStyle}
             />
           </FormControl>
 
-          {/* 비밀번호 */}
+          {/* 이메일(회원가입 전용) */}
+          {isRegister && (
+            <FormControl>
+              <FormLabel fontSize={{ base: "xs", md: "sm" }} mb={2}>
+                이메일:
+              </FormLabel>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                {...pixelInputStyle}
+              />
+            </FormControl>
+          )}
+
+          {/* 비밀번호(공통) */}
           <FormControl>
             <FormLabel fontSize={{ base: "xs", md: "sm" }} mb={2}>
               비밀번호:
@@ -137,7 +204,7 @@ export const Auth = () => {
             />
           </FormControl>
 
-          {/* 비밀번호 확인 (회원가입 시에만 보임) */}
+          {/* 비밀번호 확인(회원가입 전용) */}
           {isRegister && (
             <FormControl>
               <FormLabel fontSize={{ base: "xs", md: "sm" }} mb={2}>
@@ -152,9 +219,8 @@ export const Auth = () => {
             </FormControl>
           )}
 
-          {/* 제출 버튼 */}
           <Button
-            type="submit" // 폼 제출 버튼으로
+            type="submit"
             mt={4}
             fontFamily="inherit"
             fontSize={{ base: "sm", md: "md" }}
@@ -167,11 +233,12 @@ export const Auth = () => {
             w="100%"
             _hover={{ bg: "#e4d5b7" }}
             _active={{ bg: "#a16c34" }}
+            isDisabled={loading}
+            leftIcon={loading ? <Spinner size="sm" /> : undefined}
           >
             {isRegister ? "회원가입" : "로그인"}
           </Button>
 
-          {/* 폼 전환 버튼 */}
           <Button
             variant="link"
             fontSize={{ base: "10px", md: "xs" }}
@@ -179,6 +246,7 @@ export const Auth = () => {
             onClick={() => setIsRegister(!isRegister)}
             _hover={{ color: "white" }}
             mt={2}
+            isDisabled={loading}
           >
             {isRegister
               ? "이미 계정이 있으신가요? 로그인"

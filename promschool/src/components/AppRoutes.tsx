@@ -3,7 +3,7 @@ import { Route, Routes, useNavigate } from "react-router-dom";
 import { GameManager } from "components/GameManager";
 import Landing from "components/Landing";
 import ProloguePage from "components/ProloguePage"; // <-- 1. ProloguePage를 불러옵니다.
-import ProfilePage from "./ProfilePage";
+import CharacterSettingPage from "./CharacterSettingPage";
 import { Auth } from "./Auth";
 
 const RedirectToHome = () => {
@@ -22,7 +22,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Landing />} />
       {/* 2. '/prologue' 경로를 여기에 추가합니다. */}
       <Route path="/prologue" element={<ProloguePage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/profile" element={<CharacterSettingPage />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/game" element={<GameManager />} />
       <Route path="*" element={<RedirectToHome />} />
