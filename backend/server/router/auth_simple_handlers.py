@@ -8,28 +8,27 @@ from server.security.auth import verify_token
 from configparser import ConfigParser
 from jose import jwt
 from sqlalchemy.orm import Session
-from server.repository.user_repository import UserRepository, UserProfile
+from server.repository.user_repository import UserRepository, UserProfile as UserProfileData
 
 
 router = APIRouter(prefix="/auth", tags=["Auth(Simple)"])
 
 
 class SignupRequest(BaseModel):
-    user_id: str = Field(min_length=3, max_length=64)
-    gender: str
-    region: str
-    job: str
+    id: str = Field(..., description="User ID (for login)")
+    email: str = Field(..., description="User email address (for internal use)")
+    password: str = Field(min_length=6, description="User password")
 
 
 class UserProfile(BaseModel):
     user_id: str
-    gender: str
-    region: str
-    job: str
+    email: str
+    # Note: password is excluded from response model for security
 
 
 class LoginRequest(BaseModel):
-    user_id: str = Field(min_length=3, max_length=64)
+    id: str = Field(..., description="User ID")
+    password: str = Field(..., description="User password")
 
 
 def _user_key(user_id: str) -> str:
@@ -42,17 +41,32 @@ async def signup(
     db: Session = Depends(get_db_session),
 ):
     repo = UserRepository(db)
-    if repo.exists(req.user_id):
-        raise HTTPException(status_code=409, detail="User already exists")
+    
+    # Check if user_id already exists
+    if repo.exists(req.id):
+        raise HTTPException(status_code=409, detail="User ID already exists")
+    
+    # Check if email already exists (for internal use)
+    if repo.exists_by_email(req.email):
+        raise HTTPException(status_code=409, detail="Email already exists")
 
-    user = UserProfile(
-        user_id=req.user_id,
-        gender=req.gender,
-        region=req.region,
-        job=req.job,
+    # Hash the password before storing
+    hashed_password = UserRepository.hash_password(req.password)
+    
+    # Use id as user_id
+    user_id = req.id
+    
+    user = UserProfileData(
+        user_id=user_id,
+        email=req.email,
+        password=hashed_password,
     )
     repo.create(user)
-    return user
+    # Return user profile without password
+    return UserProfile(
+        user_id=user.user_id,
+        email=user.email,
+    )
 
 
 @router.post("/login")
@@ -63,11 +77,17 @@ async def login(
     parser: ConfigParser = Depends(get_config_parser),
 ):
     repo = UserRepository(db)
-    if not repo.exists(req.user_id):
-        raise HTTPException(status_code=404, detail="User not found")
+    # Login with user_id (id) instead of email
+    user = repo.get(req.id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid ID or password")
+    
+    # Verify password
+    if not UserRepository.verify_password(req.password, user.password):
+        raise HTTPException(status_code=401, detail="Invalid ID or password")
 
     secret_key = parser.get("oauth2", "SECRET_KEY", fallback="secret_key")
-    token = jwt.encode({"user_id": req.user_id}, key=secret_key, algorithm="HS256")
+    token = jwt.encode({"user_id": user.user_id, "email": user.email}, key=secret_key, algorithm="HS256")
     # Set cookie for convenience (front can also store token manually)
     response.set_cookie(key="token", value=token, max_age=60 * 60 * 24 * 30)
     return {"token": token}
@@ -93,6 +113,10 @@ async def me(
     profile = repo.get(user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="User not found")
-    return profile
+    # Convert dataclass to response model
+    return UserProfile(
+        user_id=profile.user_id,
+        email=profile.email,
+    )
 
 
