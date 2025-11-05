@@ -1,3 +1,4 @@
+// src/components/Quest1.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
@@ -10,6 +11,7 @@ import {
   Progress,
   Badge,
   Divider,
+  usePrefersReducedMotion,
 } from "@chakra-ui/react";
 import { PIXEL_PALETTE as C } from "../pixelpalette";
 
@@ -36,14 +38,14 @@ type Report = {
 };
 
 // ------------ 테마 색상 (팔레트 기반) ------------
-const FRAME_BG = `${C.tileLight}`;          // 바깥 프레임 배경
-const FRAME_BORDER = `${C.border}`;         // 바깥 프레임 테두리
-const INNER_BORDER = `${C.border}`;         // 내부 카드 테두리
-const CARD_BG = `${C.ribbon}`;              // 카드/패널 배경
-const TEXT_INK = `${C.ink}`;                // 기본 텍스트
-const LABEL_BG = `${C.ribbon}`;             // 라벨 배경
-const LABEL_TEXT = `${C.ink}`;              // 라벨 텍스트
-const GLASS_BG = `${C.tileLight}F2`;        // 유리 카드 느낌
+const FRAME_BG = `${C.tileLight}`;
+const FRAME_BORDER = `${C.border}`;
+const INNER_BORDER = `${C.border}`;
+const CARD_BG = `${C.ribbon}`;
+const TEXT_INK = `${C.ink}`;
+const LABEL_BG = `${C.ribbon}`;
+const LABEL_TEXT = `${C.ink}`;
+const GLASS_BG = `${C.tileLight}F2`;
 
 // ------------ 게임 설정 ------------
 const CONFIG = {
@@ -106,8 +108,13 @@ export default function Quest1({
   mode="edu",
   incomeKRW = 1_800_000,
 }: Props) {
+  const reduce = usePrefersReducedMotion();
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [running, setRunning] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
 
   // UI state
@@ -125,8 +132,8 @@ export default function Quest1({
 
   // 내부 게임 상태
   const stateRef = useRef({
-    width: 1500, height: 520,
-    cart: { x: 450, y: 520-32, w: 120, h: 22 },
+    width: 900, height: 520,              // 논리 해상도(고정)
+    cart: { x: 900/2, y: 520-32, w: 120, h: 22 },
     keys: new Set<string>(),
     timer: 0,
     nextDrop: 0,
@@ -134,6 +141,8 @@ export default function Quest1({
     rng: mode === "edu" ? mulberry32(777) : Math.random,
     pool: [] as string[],
   });
+
+  const lastTimeRef = useRef<number | null>(null);
 
   // 고정 시퀀스
   const buildFixed = () => {
@@ -156,8 +165,35 @@ export default function Quest1({
     setReqCount(0);
     setOverBudget(false);
     setRunning(false);
+    setPaused(false);
     setShowOverlay(true);
+    lastTimeRef.current = null;
+    // 캔버스 초기 스케일
+    resizeCanvas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, mode]);
+
+  // 반응형/고DPI 캔버스
+  const resizeCanvas = () => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const ratio = (window.devicePixelRatio || 1);
+    const st = stateRef.current;
+    // 실제 캔버스 픽셀 크기
+    cvs.width = Math.floor(st.width * ratio);
+    cvs.height = Math.floor(st.height * ratio);
+    const ctx = cvs.getContext("2d");
+    if (ctx) {
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0); // 논리 좌표 → 픽셀 스케일
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onRz = () => resizeCanvas();
+    window.addEventListener("resize", onRz);
+    return () => window.removeEventListener("resize", onRz);
+  }, [isOpen]);
 
   // 입력
   useEffect(() => {
@@ -166,6 +202,9 @@ export default function Quest1({
     const cvs = canvasRef.current!;
     const keyDown = (e:KeyboardEvent) => {
       if (["ArrowLeft","ArrowRight"].includes(e.key)) st.keys.add(e.key);
+      if (e.key === " "){ e.preventDefault(); if (running) setPaused(p => !p); else start(); }
+      if (e.key === "p" || e.key === "P"){ if (running) setPaused(p => !p); }
+      if (e.key === "Escape"){ onClose(); }
     };
     const keyUp = (e:KeyboardEvent) => {
       if (["ArrowLeft","ArrowRight"].includes(e.key)) st.keys.delete(e.key);
@@ -193,28 +232,33 @@ export default function Quest1({
       window.removeEventListener("keyup", keyUp);
       cvs.removeEventListener("mousemove", mm);
       cvs.removeEventListener("mousedown", md);
-      cvs.removeEventListener("touchstart", ts);
-      cvs.removeEventListener("touchmove", tm);
+      cvs.removeEventListener("touchstart", ts as any);
+      cvs.removeEventListener("touchmove", tm as any);
     };
-  }, [isOpen]);
+  }, [isOpen, running, onClose]);
 
   // 루프
   useEffect(() => {
-    if (!isOpen || !running) return;
+    if (!isOpen || !running || paused) return;
     let raf = 0;
-    const loop = () => {
-      step();
+    const loop = (now: number) => {
+      const last = lastTimeRef.current ?? now;
+      const dt = now - last; // ms
+      lastTimeRef.current = now;
+      step(dt);
       draw();
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, running, bag, spentManwon]);
+  }, [isOpen, running, paused, bag, spentManwon]);
 
   const start = () => {
     setShowOverlay(false);
     setRunning(true);
+    setPaused(false);
+    lastTimeRef.current = null;
   };
 
   const finish = () => {
@@ -230,16 +274,17 @@ export default function Quest1({
   };
 
   // ======= 게임 로직 =======
-  const step = () => {
+  const step = (dt:number) => {
     const st = stateRef.current;
 
-    // 이동
-    if (st.keys.has("ArrowLeft"))  st.cart.x -= CONFIG.CART_SPEED;
-    if (st.keys.has("ArrowRight")) st.cart.x += CONFIG.CART_SPEED;
+    // 이동 (dt 보정)
+    const stepPx = CONFIG.CART_SPEED * (dt / 16.6667);
+    if (st.keys.has("ArrowLeft"))  st.cart.x -= stepPx;
+    if (st.keys.has("ArrowRight")) st.cart.x += stepPx;
     st.cart.x = clamp(st.cart.x, st.cart.w/2, st.width-st.cart.w/2);
 
     // 타이머/스폰
-    st.timer += 16;
+    st.timer += dt;
     if (mode === "edu") {
       if (st.timer > st.nextDrop) {
         st.drops.push(spawn(st));
@@ -254,7 +299,7 @@ export default function Quest1({
     }
 
     // 드롭 이동/충돌
-    st.drops.forEach(d => { d.y += d.vy; });
+    st.drops.forEach(d => { d.y += d.vy * (dt / 16.6667); });
     st.drops = st.drops.filter(d => {
       const hit = collide(st.cart, d);
       if (hit) { addItem(d.key); return false; }
@@ -275,7 +320,7 @@ export default function Quest1({
     const next = spentManwon + it.price;
     if (next > incomeManwon) {
       setOverBudget(true);
-      setTimeout(()=> setOverBudget(false), 700);
+      setTimeout(()=> setOverBudget(false), 600);
       return;
     }
     setSpentManwon(next);
@@ -330,7 +375,7 @@ export default function Quest1({
     ctx.globalAlpha = 1;
 
     // 드롭
-    st.drops.forEach(d => drawDrop(ctx, d));
+    stateRef.current.drops.forEach(d => drawDrop(ctx, d));
 
     // 카트
     drawCart(ctx, st.cart);
@@ -338,9 +383,9 @@ export default function Quest1({
 
   const drawCart = (ctx:CanvasRenderingContext2D, cart:{x:number;y:number;w:number;h:number}) => {
     const {x,y,w,h} = cart;
-    ctx.fillStyle = TEXT_INK;   // 보라 본체
+    ctx.fillStyle = TEXT_INK;
     ctx.fillRect(x-w/2, y-h/2, w, h);
-    ctx.strokeStyle = C.border; // 진보라 아치
+    ctx.strokeStyle = C.border;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(x, y-h/2, 18, Math.PI, 0);
@@ -348,14 +393,12 @@ export default function Quest1({
   };
 
   const drawDrop = (ctx:CanvasRenderingContext2D, d:Drop) => {
-    // 아이템 카드
     roundRect(ctx, d.x-26, d.y-22, 52, 44, 10, true, true, CARD_BG, C.border);
     ctx.font = "22px system-ui, Apple Color Emoji, Segoe UI Emoji";
     ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillStyle = TEXT_INK;
     ctx.fillText(d.emoji, d.x, d.y-2);
 
-    // 가격 라벨
     roundRect(ctx, d.x-20, d.y+10, 40, 16, 6, true, true, C.tileMid, C.border);
     ctx.fillStyle = C.border;
     ctx.font = "10px system-ui";
@@ -386,9 +429,37 @@ export default function Quest1({
   if (!isOpen) return null;
 
   return (
-    <Box position="absolute" inset={0} zIndex={50} pointerEvents="none">
+    // === 이전 모달과 동일한 '배경 오버레이' 래퍼 ===
+    <Box
+      position="fixed"
+      inset={0}
+      zIndex={1000}
+      role="dialog"
+      aria-modal="true"
+      _before={{
+        content: '""',
+        position: "absolute",
+        inset: 0,
+        backgroundImage: "url('/assets/background/quest1_back.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+      _after={{
+        content: '""',
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        boxShadow: `inset 0 0 200px ${C.shadow}`,
+        backgroundImage: reduce
+          ? undefined
+          : "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 1px, transparent 2px, transparent 4px)",
+        mixBlendMode: "overlay",
+        opacity: 0.34,
+      }}
+    >
+      {/* 메인 컨테이너 */}
       <Box
-        pointerEvents="auto"
         position="absolute"
         left="50%"
         top="50%"
@@ -397,15 +468,15 @@ export default function Quest1({
         border={`3px solid ${FRAME_BORDER}`}
         borderRadius="18px"
         boxShadow={`0 10px 30px ${C.shadow}`}
-        pt="56px"
-        px={4}
-        pb={4}
-        w={["92%", "950px"]}
+        pt={`max(56px, calc(env(safe-area-inset-top) + 32px))`}
+        px={[3,4]}
+        pb={`max(12px, env(safe-area-inset-bottom))`}
+        w={["92%", "980px"]}
       >
         {/* 상단 퀘스트 라벨 */}
         <Box
           position="absolute"
-          top="10px"
+          top={`max(10px, env(safe-area-inset-top))`}
           left="14px"
           bg={LABEL_BG}
           border={`3px solid ${FRAME_BORDER}`}
@@ -423,16 +494,24 @@ export default function Quest1({
           {/* 좌: 캔버스 카드 */}
           <Box
             position="relative"
+            ref={containerRef}
             bg={CARD_BG}
             rounded="md"
             border={`3px solid ${INNER_BORDER}`}
             p={2}
           >
+            {/* 고정 논리 해상도 900x520, CSS로 축소/확대 */}
             <canvas
               ref={canvasRef}
               width={900}
               height={520}
-              style={{ width: "620px", height: "358px", display:"block", borderRadius: 8 }}
+              style={{
+                width: "640px",             // 데스크탑 권장 표시 폭
+                height: `${(520/900)*640}px`,
+                maxWidth: "min(92vw, 700px)",// 모바일에서 자동 축소
+                display:"block",
+                borderRadius: 8
+              }}
             />
             {/* 오버레이(시작/안내) */}
             {showOverlay && (
@@ -440,8 +519,8 @@ export default function Quest1({
                 position="absolute"
                 left="12px"
                 top="19px"
-                w="620px"
-                h="358px"
+                w="calc(100% - 24px)"
+                h="calc(100% - 38px)"
                 align="center"
                 justify="center"
               >
@@ -449,7 +528,7 @@ export default function Quest1({
                   bg={GLASS_BG}
                   rounded="md"
                   border={`3px solid ${INNER_BORDER}`}
-                  p={5}
+                  p={[4,5]}
                   maxW="520px"
                   textAlign="center"
                   spacing={3}
@@ -461,7 +540,9 @@ export default function Quest1({
                     소득 한도({toKRW(incomeManwon)}) 안에서 필수 과일(주거·식비·통신)을 반드시 포함해야 합니다.
                   </Text>
                   <HStack pt={1}>
-                    <Button colorScheme="purple" onClick={start}>시작하기</Button>
+                    <Button colorScheme="purple" onClick={start}>
+                      시작하기 (Space)
+                    </Button>
                     <Button
                       variant="outline"
                       borderColor={C.border}
@@ -476,8 +557,27 @@ export default function Quest1({
                       규칙 보기
                     </Button>
                   </HStack>
+                  <Text fontSize="xs" opacity={0.7} color={C.border}>
+                    Space: 시작/일시정지 · Esc: 닫기
+                  </Text>
                 </VStack>
               </Flex>
+            )}
+            {/* 일시정지 배지 */}
+            {running && paused && (
+              <Box
+                position="absolute"
+                top={3}
+                left="50%"
+                transform="translateX(-50%)"
+                bg={`${C.tileLight}E6`}
+                border={`2px solid ${INNER_BORDER}`}
+                rounded="full"
+                px={3}
+                py={1}
+              >
+                <Text fontSize="sm" color={TEXT_INK} fontWeight="bold">PAUSED</Text>
+              </Box>
             )}
           </Box>
 
@@ -488,8 +588,12 @@ export default function Quest1({
             rounded="md"
             border={`3px solid ${INNER_BORDER}`}
             p={3}
-            minW="220px"
+            minW="240px"
             spacing={3}
+            // 예산 초과 흔들림
+            sx={!reduce && overBudget ? {
+              animation: "shake 0.35s ease",
+            } : undefined}
           >
             <HStack justify="space-between">
               <Badge colorScheme="purple" rounded="full" px={2}>월급</Badge>
@@ -525,9 +629,20 @@ export default function Quest1({
                 _hover={{ bg: C.ribbon }}
                 onClick={onClose}
               >
-                닫기
+                닫기 (Esc)
               </Button>
-              <Button colorScheme="purple" onClick={finish}>종료 & 리포트</Button>
+              <HStack>
+                <Button
+                  variant="outline"
+                  borderColor={C.border}
+                  color={C.border}
+                  _hover={{ bg: C.ribbon }}
+                  onClick={() => setPaused(p => !p)}
+                >
+                  {paused ? "재개" : "일시정지"}
+                </Button>
+                <Button colorScheme="purple" onClick={finish}>종료 & 리포트</Button>
+              </HStack>
             </HStack>
 
             <Text fontSize="xs" color={C.border} opacity={0.7}>
@@ -536,6 +651,21 @@ export default function Quest1({
           </VStack>
         </Flex>
       </Box>
+
+      {/* 키프레임: 스캔라인(상위 배경), 흔들림(사이드패널) */}
+      <style>{`
+        @keyframes shine {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes shake {
+          0% { transform: translateX(0) }
+          25% { transform: translateX(-6px) }
+          50% { transform: translateX(4px) }
+          75% { transform: translateX(-3px) }
+          100% { transform: translateX(0) }
+        }
+      `}</style>
     </Box>
   );
 }

@@ -70,6 +70,12 @@ export const App = () => {
             font-weight: normal;
             font-style: normal;
           }
+          @font-face {
+            font-family: "neodgm";
+            src: url("/assets/fonts/neodgm.ttf") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+          }
         `}
       />
       <Router>
