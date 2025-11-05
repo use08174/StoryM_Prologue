@@ -86,16 +86,16 @@ export const Auth = () => {
     await apiMe(token); // 👈 이제 token은 null이 아닙니다.
     navigate("/profile");
   } catch (e: any) {
-    // [ ✅ 여기가 수정된 부분입니다 ]
-    if (isRegister) {
-      // 1. 회원가입 실패 시:
-      // "User ID already exists" 같은 구체적인 메시지를 보여주는 게 좋습니다.
-      setError("아이디가 이미 존재합니다. 다른 아이디를 사용해주세요.");
-    } else {
-      // 2. 로그인 실패 시:
-      // 백엔드 메시지("Invalid ID...") 대신, 원하는 멘트로 고정합니다.
-      setError("아이디 또는 비밀번호가 일치하지 않습니다.");
-    }
+      const msg = (e?.message || "").toLowerCase();
+
+      if (isRegister) {
+        if (msg.includes("at least") && msg.includes("6")) {
+          return setError("비밀번호는 최소 6자 이상이어야 합니다.");
+        }
+        return setError("아이디가 이미 존재합니다. 다른 아이디를 사용해주세요.");
+      } else {
+        return setError("아이디 또는 비밀번호가 일치하지 않습니다.");
+      }
   } finally {
     setLoading(false);
   }

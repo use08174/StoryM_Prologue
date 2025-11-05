@@ -280,7 +280,7 @@ const ProloguePage = () => {
   return (
     <Box
       position="relative"
-      height="100vh"
+      height="100dvh"
       width="100vw"
       bg="black"
       overflow="hidden"
@@ -294,15 +294,18 @@ const ProloguePage = () => {
 
       {/* 배경 이미지 */}
       <Fade in={true} key={sceneIndex}>
-        <Image
-          src={scene.image}
-          alt={`Prologue Scene ${sceneIndex + 1}`}
-          objectFit="cover"
-          width="100%"
-          height="100%"
-          draggable={false}
+        <Box
+          position="absolute"
+          inset="0"
+          bgImage={`url(${scene.image})`}
+          bgSize="cover"
+          bgPosition="center"
+          bgRepeat="no-repeat"
+          // 선택/드래그 방지 (선택)
+          userSelect="none"
         />
       </Fade>
+
 
       {/* 바닥 그라데이션 */}
       <Box

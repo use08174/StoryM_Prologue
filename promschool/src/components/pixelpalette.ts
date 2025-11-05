@@ -1,4 +1,4 @@
-// pixelPalette.ts
+// pixelpalette.ts
 export const PIXEL_PALETTE = {
   tileLight: "#F1D6EC",  // 타일/배경 핑크
   tileMid:   "#D7B3EA",  // 보조 음영
