@@ -2,19 +2,42 @@
 import { useState, useEffect } from "react";
 import {
   Box, Image, Modal, ModalOverlay, ModalContent, ModalHeader,
-  ModalBody, ModalCloseButton, List, ListItem, Text, Spinner,
-  useDisclosure, useToast
+  ModalBody, ModalCloseButton, List, ListItem, Text, useDisclosure,
+  useToast, HStack, Button, Tag, keyframes
 } from "@chakra-ui/react";
 import { TopicType, YouthPolicyTip } from "../api/getYouthPolicyTip";
 import { getYouthPolicyTip } from "../api/getYouthPolicyTip";
 
+const C = {
+  primary: "#7E44A8",
+  accent: "#FCCFDB",
+  mid: "#A372C2",
+  dark: "#121318",
+  panel: "#1A1B22",
+};
+
+const pixelBorder = (outer = C.primary, inner = C.mid) => ({
+  border: "0",
+  boxShadow: `
+    0 0 0 2px ${outer},
+    0 0 0 4px ${inner},
+    inset 0 0 0 2px ${inner}
+  `,
+  borderRadius: "0",
+});
+
+// 픽셀 로딩 애니메이션
+const blink = keyframes`
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+`;
+
 type Props = {
-  topicType: TopicType;          // "lclsf" | "mclsf"
-  topicName: string;             // 예: "주거", "취업"  <-- 유지 필수
-  // ↓ 캐릭터 객체는 제거하고, 선택적으로 ID/메타만 넘길 수 있게
-  characterId?: number;          // /llm/chat에서 사용할 캐릭터 ID
-  userId?: string;               // /llm/chat에서 사용할 유저 ID
-  characterMeta?: { gender?: string; region?: string; job?: string }; // 추출 프롬프트용(선택)
+  topicType: TopicType;
+  topicName: string;
+  characterId?: number;
+  userId?: string;
+  characterMeta?: { gender?: string; region?: string; job?: string };
   boxSize?: string;
   src?: string;
 };
@@ -36,11 +59,7 @@ export default function PolicyTipIcon({
       setLoading(true);
       try {
         const data = await getYouthPolicyTip({
-          topicType,
-          topicName,          // 필수
-          characterId,        // 선택
-          userId,             // 선택
-          characterMeta,      // 선택
+          topicType, topicName, characterId, userId, characterMeta,
         });
         setTip(data);
       } catch (e: any) {
@@ -50,35 +69,123 @@ export default function PolicyTipIcon({
         setLoading(false);
       }
     })();
-  // 의존성에 ID/메타도 포함
   }, [isOpen, topicType, topicName, characterId, userId, characterMeta, toast]);
 
   return (
     <>
-      <Box as="button" onClick={onOpen} cursor="pointer" _hover={{ transform: "scale(1.06)" }}>
+      {/* API 아이콘 (살짝 커지는 픽셀 버튼 느낌) */}
+      <Box
+        as="button"
+        onClick={onOpen}
+        cursor="pointer"
+        _hover={{ transform: "scale(1.06)" }}
+        transition="transform 80ms steps(4)"
+      >
         <Image src={src} alt="info" boxSize={boxSize} pointerEvents="none" />
       </Box>
 
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>{tip?.title ?? "청년정책 Tip"}</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={4}>
+      <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
+        <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(0px)" />
+        <ModalContent
+          bg={C.panel}
+          color={C.accent}
+          maxW="680px"
+          {...pixelBorder(C.primary, C.mid)}
+          position="relative"
+        >
+          {/* 상단 픽셀 바 */}
+          <Box h="28px" bg={C.primary} />
+
+          <ModalCloseButton
+            sx={pixelBorder(C.accent, C.primary)}
+            bg={C.accent}
+            color={C.primary}
+            _hover={{ bg: C.accent }}
+            top="8px"
+            right="8px"
+          />
+
+          <ModalHeader
+            pt="10px"
+            pb="0"
+            fontFamily="neodgm"
+            fontSize="20px"
+            letterSpacing="0.5px"
+            color={C.accent}
+          >
+            {tip?.title ?? "💡 청년정책 TIP"}
+          </ModalHeader>
+
+          <ModalBody pt="14px" pb="16px">
+            {/* 헤더 라벨 영역 */}
+            <HStack spacing={2} mb={4} flexWrap="wrap">
+              <Tag size="sm" bg={C.mid} color="white"  {...pixelBorder(C.primary, C.primary)}>
+                {topicType === "lclsf" ? "대주제" : "중주제"}
+              </Tag>
+              <Tag size="sm" bg={C.accent} color={C.primary} {...pixelBorder(C.primary, C.primary)}>
+                {topicName}
+              </Tag>
+            </HStack>
+
+            {/* 로딩 */}
             {loading && (
-              <Box display="flex" gap="8px" alignItems="center">
-                <Spinner /> <Text>불러오는 중…</Text>
+              <Box
+                bg={C.dark}
+                p="16px"
+                {...pixelBorder(C.mid, C.primary)}
+                fontFamily="neodgm"
+                fontSize="20px"
+                letterSpacing="0.5px"
+              >
+                LOADING
+                <Box as="span" animation={`${blink} 1s infinite`} ml="2px">.</Box>
+                <Box as="span" animation={`${blink} 1s infinite .15s`}>. </Box>
+                <Box as="span" animation={`${blink} 1s infinite .3s`}>.</Box>
               </Box>
             )}
+
+            {/* 내용 */}
             {!loading && tip && (
-              <List spacing={2}>
-                {tip.bullets.map((b, i) => (
-                  <ListItem key={i}>
-                    <Text as="span" fontWeight="semibold">{i + 1}. {b.title}</Text>
-                    {b.summary && <Text fontSize="sm" color="gray.600">— {b.summary}</Text>}
-                  </ListItem>
-                ))}
-              </List>
+              <Box
+                bg={C.dark}
+                p="14px"
+                {...pixelBorder(C.mid, C.primary)}
+              >
+                <List spacing={3}>
+                  {tip.bullets.map((b, i) => (
+                    <ListItem key={i}>
+                      <HStack align="start" spacing={3}>
+                        <Box
+                          w="10px"
+                          h="10px"
+                          bg={C.accent}
+                          boxShadow={`
+                            0 0 0 2px ${C.primary},
+                            0 0 0 4px ${C.mid}
+                          `}
+                          flexShrink={0}
+                        />
+                        <Box>
+                          <Text
+                            as="span"
+                            fontWeight="bold"
+                            color={C.accent}
+                            fontFamily="neodgm"
+                            fontSize="12px"
+                          >
+                            {i + 1}. {b.title}
+                          </Text>
+                          {b.summary && (
+                            <Text mt="4px" fontSize="12px" color="#CFCFD6">
+                              — {b.summary}
+                            </Text>
+                          )}
+                        </Box>
+                      </HStack>
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
             )}
           </ModalBody>
         </ModalContent>
