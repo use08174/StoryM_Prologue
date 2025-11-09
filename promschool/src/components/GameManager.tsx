@@ -24,14 +24,15 @@ import ConfirmStartModal from "./ConfirmStartModal";
 import PubSub from "pubsub-js"; // 
 import Quest1 from "./Quest1/Quest1";
 import Quest2 from "./Quest2/Quest2";
-//import Quest3 from "./Quest3/Quest3";
+import Quest3 from "./Quest3/Quest3";
+import PolicyTipIcon from "./PolicyTipIcon";
 
 export const GameManager = () => {
   const [sessionId, setSessionId] = useState<string>();
   const [endResult, setEndResult] = useState<ResultScreenProps>();
   const [exp, setExp] = useState(0);
   const [alarm, setAlarm] = useState(0);
-  const [paused, setPaused] = useState(false); // ✅ 알람 동안 입력/동작 차단
+  const [paused, setPaused] = useState(false); 
   const [showMsg, setShowMsg] = useState(false);
   const [showQuest1, setShowQuest1] = useState(false);
   const [showQuest2, setShowQuest2] = useState(false); 
@@ -39,7 +40,7 @@ export const GameManager = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showQuestModal, setShowQuestModal] = useState(false);
   const [currentQuest, setCurrentQuest] = useState(1); 
-  const [pendingQuest, setPendingQuest] = useState<1 | 2 | null>(null); // ⭐️ 어떤 퀘스트를 시작할지 구분
+  const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 |null>(null); // ⭐️ 어떤 퀘스트를 시작할지 구분
 
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
   const [pendingAlarmSound, setPendingAlarmSound] = useState(false);
@@ -117,7 +118,6 @@ export const GameManager = () => {
     };
   }, []);
 
-  // Quest2 시작 신호 구독
   useEffect(() => {
     const subs = [
       PubSub.subscribe(Topics.startQuest1, () => {
@@ -128,21 +128,22 @@ export const GameManager = () => {
         setPendingQuest(2);
         setShowConfirm(true);
       }),
-      /*PubSub.subscribe(Topics.startQuest3, () => {
+      PubSub.subscribe(Topics.startQuest3, () => {
         setPendingQuest(3);
         setShowConfirm(true);
-      }),*/
+      }),
     ];
 
     return () => subs.forEach((s) => PubSub.unsubscribe(s));
   }, []);
+  
 
 
 
   // endGame 이벤트 수신
-  PubSub.subscribe(Topics.endGame, (_channel, payload) => {
-    setEndResult(payload as ResultScreenProps);
-  });
+  //PubSub.subscribe(Topics.endGame, (_channel, payload) => {
+    //setEndResult(payload as ResultScreenProps);
+  //});
 
   // 퀘스트 완료 시 경험치/진행 업데이트
   const handleQuestComplete = () => {
@@ -200,9 +201,9 @@ export const GameManager = () => {
               }}
             />
 
-            {/* Quest 아이콘만 */}
+            {/* Info 아이콘만 */}
             <Image
-              src="/assets/sprites/storym_scenario.png"
+              src="/assets/sprites/storym_info.png"
               alt="quest"
               boxSize="60px"
               cursor="pointer"
@@ -210,15 +211,14 @@ export const GameManager = () => {
               onClick={() => setShowQuestModal(true)}
             />
 
-            {/* Info 아이콘만 */}
-            <Image
-              src="/assets/sprites/storym_info.png"
-              alt="info"
+            {/* API아이콘만 */}
+            <PolicyTipIcon
+              topicType="lclsf"         
+              topicName="취업"           
+              characterMeta={{ gender: "여성", region: "의왕", job: "대학생" }} // 선택
               boxSize="60px"
-              cursor="pointer"
-              _hover={{ transform: "scale(1.06)" }}
-              // onClick 핸들러 필요하면 여기에 추가
             />
+
 
             {/* Settings 아이콘만 */}
             <Image
@@ -255,17 +255,19 @@ export const GameManager = () => {
             message={`퀘스트 ${pendingQuest ?? currentQuest}을 시작하시겠습니까?`}
             onYes={() => {
               setShowConfirm(false);
-              if (pendingQuest === 1) setShowQuest1(true);
-              if (pendingQuest === 2) {
-                PubSub.publish(Topics.giveKeysToDom);   
-                setShowQuest2(true);                    
-              }
-              /*if (pendingQuest === 3) {
-                PubSub.publish(Topics.giveKeysToDom);
-                setShowQuest3(true);
-              }*/
-              
-              setPendingQuest(null);
+              requestAnimationFrame(() => {
+                setPaused(true);       
+                if (pendingQuest === 1) setShowQuest1(true);
+                if (pendingQuest === 2) {
+                  PubSub.publish(Topics.giveKeysToDom);
+                  setShowQuest2(true);
+                }
+                if (pendingQuest === 3) {
+                  PubSub.publish(Topics.giveKeysToDom);
+                  setShowQuest3(true);
+                }
+                setPendingQuest(null);
+            });
             }}
             onNo={() => setShowConfirm(false)}
           />
@@ -283,11 +285,13 @@ export const GameManager = () => {
               isOpen={true}
               onClose={() => {
                 setShowQuest1(false);
+                setPaused(false);  
                 PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest1(false);
                 PubSub.publish(Topics.giveKeysToGame);
+                setPaused(false);  
                 handleQuestComplete();
               }}
             />
@@ -297,16 +301,32 @@ export const GameManager = () => {
             <Quest2
               onClose={() => {
                 setShowQuest2(false);
-                PubSub.publish(Topics.giveKeysToGame); 
+                setPaused(false);  
+                PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest2(false);
+                setPaused(false);  
                 PubSub.publish(Topics.giveKeysToGame); 
                 handleQuestComplete();
               }}
             />
           )}
-
+          {showQuest3 && (
+            <Quest3
+              onClose={() => {
+                setShowQuest3(false);
+                setPaused(false);  
+                PubSub.publish(Topics.giveKeysToGame);
+              }}
+              onFinish={() => {
+                setShowQuest3(false);
+                setPaused(false);  
+                PubSub.publish(Topics.giveKeysToGame);
+                handleQuestComplete();
+              }}
+            />
+          )}
 
           <ChatModal
             eastworldClient={eastworldClient}
@@ -314,7 +334,7 @@ export const GameManager = () => {
             notes=""
             setNotes={() => {}}
           />
-          <EvidenceModal />
+          <EvidenceModal /> 
           <PoliceModal eastworldClient={eastworldClient} />
           <RateLimitModal />
         </Box>
