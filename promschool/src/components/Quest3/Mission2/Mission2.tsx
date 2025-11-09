@@ -5,7 +5,6 @@ import StageScene from "../../StageScene";
 import DocDeunggi from "./DocDeunggi";
 import DocBuilding from "./DocBuilding";
 import DocContract from "./DocContract";
-import MessageModalQuest3 from "./MessageModalQuest3Mission2";
 export type DocKey = "deunggi" | "building" | "contract";
 
 export default function Mission2({ onResult }: { onResult: () => void }) {
@@ -15,8 +14,8 @@ export default function Mission2({ onResult }: { onResult: () => void }) {
 
   const docs = [
     { key: "deunggi" as const,  name: "등기부등본",     img: "/assets/quest3_scenes/deunggi.png" },
-    { key: "building" as const, name: "건축물대장",     img: "/assets/quest3_scenes/building_thumb.png" },
-    { key: "contract" as const, name: "임대차계약서",   img: "/assets/quest3_scenes/contract_thumb.png" },
+    { key: "building" as const, name: "건축물대장",     img: "/assets/quest3_scenes/building.png" },
+    { key: "contract" as const, name: "임대차계약서",   img: "/assets/quest3_scenes/contract.png" },
   ];
 
   const openDoc  = (k: DocKey) => setOpened(k);
@@ -29,7 +28,6 @@ export default function Mission2({ onResult }: { onResult: () => void }) {
 
   return (
     <StageScene bg="/assets/quest3_scenes/desk_bg.png" width={980}>
-      {/* 여기부터는 딱 컨텐츠만 */}
       <VStack
         align="stretch"
         bg="rgba(0,0,0,0.35)"

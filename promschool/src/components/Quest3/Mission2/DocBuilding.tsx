@@ -1,35 +1,116 @@
+// src/components/Quest3/Mission2/DocBuilding.tsx
 import { useState } from "react";
-import { Box, Button, Image, VStack, Text } from "@chakra-ui/react";
+import { Box, Button, Image, VStack, Text, HStack } from "@chakra-ui/react";
+import MessageModalQuest3, { Mission2Scene } from "./MessageModalQuest3Mission2";
 
-const DocBuilding = ({ onComplete, setBuddyMsg }: any) => {
-  const [step, setStep] = useState<string>("main");
+type Props = {
+  onComplete: () => void;
+  setBuddyMsg?: (msg: string) => void; // 선택
+};
 
-  const openStep = (s: string, msg: string) => {
-    setStep(s);
-    setBuddyMsg(msg);
+const C = { primary:"#7E44A8", accent:"#FCCFDB", mid:"#A372C2" };
+const pixelBorder = (outer=C.primary, inner=C.mid)=>({
+  border:"0",
+  boxShadow:`0 0 0 2px ${outer}, 0 0 0 4px ${inner}, inset 0 0 0 2px ${inner}`,
+  borderRadius:"0",
+});
+
+type Step = "main" | "위반건축물" | "주소" | "소유자" | "용도";
+
+export default function DocBuilding({ onComplete, setBuddyMsg }: Props) {
+  const [step, setStep] = useState<Step>("main");
+
+  // 메시지 모달 상태 (인트로 자동 표시)
+  const [showMsg, setShowMsg] = useState(true);
+  const [scene, setScene] = useState<Mission2Scene>("building_intro");
+
+  const openScene = (s: Mission2Scene, buddyTip?: string) => {
+    setScene(s);
+    setShowMsg(true);
+    if (buddyTip && setBuddyMsg) setBuddyMsg(buddyTip);
   };
 
   return (
-    <VStack spacing={4} bg="rgba(20,20,20,0.95)" p={6} borderRadius="md">
-      <Text color="yellow.300" fontWeight="bold">건축물대장</Text>
+    <VStack spacing={5} bg="rgba(20,20,20,0.95)" p={6} {...pixelBorder()}>
+      <Text color={C.accent} fontWeight="bold" fontFamily="NeoDGM" fontSize="lg">
+        건축물대장
+      </Text>
+
       {step === "main" && (
         <>
-          <Image src="/assets/quest3_scenes/building_full.png" w="750px" />
-          <VStack>
-            <Button onClick={() => openStep("위반건축물", "위반건축물 표시가 있는지 확인해!")}>위반건축물 여부</Button>
-            <Button onClick={() => openStep("주소", "주소가 등기부등본과 일치하는지 봐!")}>대상물 주소</Button>
-            <Button onClick={() => openStep("소유자", "소유자 정보가 일치하는지 확인!")}>소유자 확인</Button>
-            <Button onClick={() => openStep("용도", "건축물 용도가 주거용인지 확인!")}>주용도 확인</Button>
-          </VStack>
-          <Button colorScheme="teal" mt={3} onClick={onComplete}>건축물대장 점검 완료</Button>
+          <Image src="/assets/quest3_scenes/building.png" w="750px" />
+
+          <HStack spacing={4} mt={2}>
+            <Button
+              onClick={() => { setStep("위반건축물"); openScene("building", "‘위반건축물’ 표기가 있는지 먼저 확인해!"); }}
+              bg={C.accent} color={C.primary} _hover={{ bg:C.accent }} {...pixelBorder()}
+            >
+              위반건축물 여부
+            </Button>
+
+            <Button
+              onClick={() => { setStep("주소"); openScene("building_address", "건축물대장 주소 ↔ 등기부등본 주소가 일치해야 해."); }}
+              bg={C.accent} color={C.primary} _hover={{ bg:C.accent }} {...pixelBorder()}
+            >
+              대상물 주소
+            </Button>
+
+            <Button
+              onClick={() => { setStep("소유자"); openScene("building_owner", "소유자 정보가 임대인 신분증/등기부와 같은지 확인!"); }}
+              bg={C.accent} color={C.primary} _hover={{ bg:C.accent }} {...pixelBorder()}
+            >
+              소유자 확인
+            </Button>
+
+            <Button
+              onClick={() => { setStep("용도"); openScene("building_usage", "주용도가 주거용인지 꼭 확인!"); }}
+              bg={C.accent} color={C.primary} _hover={{ bg:C.accent }} {...pixelBorder()}
+            >
+              주용도 확인
+            </Button>
+          </HStack>
+
+          <Button colorScheme="teal" mt={4} onClick={onComplete} {...pixelBorder()}>
+            건축물대장 점검 완료
+          </Button>
         </>
       )}
-      {step === "위반건축물" && <Image src="/assets/quest3_scenes/building_violation.png" w="700px" />}
-      {step === "주소" && <Image src="/assets/quest3_scenes/building_address.png" w="700px" />}
-      {step === "소유자" && <Image src="/assets/quest3_scenes/building_owner.png" w="700px" />}
-      {step === "용도" && <Image src="/assets/quest3_scenes/building_usage.png" w="700px" />}
+
+      {step === "위반건축물" && (
+        <>
+          <Image src="/assets/quest3_scenes/building.png" w="700px" />
+          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+        </>
+      )}
+
+      {step === "주소" && (
+        <>
+          <Image src="/assets/quest3_scenes/building_address.png" w="700px" />
+          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+        </>
+      )}
+
+      {step === "소유자" && (
+        <>
+          <Image src="/assets/quest3_scenes/building_owner.png" w="700px" />
+          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+        </>
+      )}
+
+      {step === "용도" && (
+        <>
+          <Image src="/assets/quest3_scenes/building_usage.png" w="700px" />
+          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+        </>
+      )}
+
+      {/* 💬 메시지 모달 */}
+      <MessageModalQuest3
+        isOpen={showMsg}
+        onComplete={() => setShowMsg(false)}
+        onClose={() => setShowMsg(false)}
+        scene={scene} // building_intro | building_violation | building_address | building_owner | building_usage
+      />
     </VStack>
   );
-};
-
-export default DocBuilding;
+}

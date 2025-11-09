@@ -17,10 +17,10 @@ export type Mission2Scene =
   | "deunggi_eulgu"
   // 건축물대장
   | "building_intro"
-  | "building_violation"
+  | "building"
   | "building_address"
   | "building_owner"
-  | "building_use"
+  | "building_usage"
   // 임대차계약서
   | "contract_intro"
   | "contract_basic"
@@ -112,7 +112,7 @@ const SCENES: Record<Mission2Scene, Line[]> = {
     { who: "중개인", text: "이건 계약하실 집의 건축물대장이에요. 이것도 살펴보시죠!" },
     { who: "버디", text: "위반건축물 여부, 주소/소유자 일치, ‘주용도=주택’인지 확인해!" },
   ],
-  building_violation: [
+  building: [
     { who: "나", text: "(우측 상단 ‘위반건축물’ 표시 없음. 정상!)" },
   ],
   building_address: [
@@ -123,7 +123,7 @@ const SCENES: Record<Mission2Scene, Line[]> = {
     { who: "버디", text: "‘소유자 현황’ 성명이 등기부 소유자와 같은지 확인." },
     { who: "나", text: "(소유자 이름 일치!)" },
   ],
-  building_use: [
+  building_usage: [
     { who: "버디", text: "‘주용도’가 주택인지 확인. 주거 외면 각종 문제가 생길 수 있어." },
     { who: "나", text: "(주용도: 주택 — 정상.)" },
   ],
