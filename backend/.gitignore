@@ -166,7 +166,7 @@ cython_debug/
 
 dev_notebook.ipynb
 config.ini
-
+config.example.ini
 # Redis
 dump.rdb
 
