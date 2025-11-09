@@ -14,6 +14,29 @@ from sqlalchemy.orm import Session
 from server.repository.user_repository import UserRepository
 from server.repository.character_repository import CharacterRepository
 from server.router.youth_policy_handlers import youth_policy_service
+from pathlib import Path
+from configparser import ConfigParser
+import os
+
+def load_youth_api_key():
+    # 1) ENV 우선
+    env_key = os.getenv("YOUTHCENTER_OPENAPI_VLAK")
+    if env_key:
+        return env_key.strip()
+
+    # 2) 여러 후보 경로 탐색
+    candidates = [
+        Path.cwd() / "config.ini",
+        Path(__file__).resolve().parents[2] / "config.ini",  # backend/config.ini
+    ]
+    cfg = ConfigParser()
+    for p in candidates:
+        if p.exists():
+            cfg.read(p, encoding="utf-8")
+            if cfg.has_option("youth_policy", "api_key"):
+                return cfg.get("youth_policy", "api_key").strip()
+
+    raise RuntimeError("API 키를 찾을 수 없습니다.")
 
 router = APIRouter(
     prefix="/llm",

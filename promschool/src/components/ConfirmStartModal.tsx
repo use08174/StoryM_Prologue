@@ -56,22 +56,28 @@ export default function ConfirmStartModal({
   // 키보드: Enter=YES, Esc=NO
   useEffect(() => {
     if (!isOpen) return;
+
     const fn = (e: KeyboardEvent) => {
-      if (e.key === "Enter") {
+      e.stopPropagation(); // ✅ ImmediatePropagation 대신 Propagation만 중단
+      if (e.code === "Enter" || e.code === "Space") {
         e.preventDefault();
         if (yesSfxRef.current) yesSfxRef.current.currentTime = 0;
         yesSfxRef.current?.play().catch(() => {});
         onYes();
-      } else if (e.key === "Escape") {
+      } else if (e.code === "Escape") {
         e.preventDefault();
         if (noSfxRef.current) noSfxRef.current.currentTime = 0;
         noSfxRef.current?.play().catch(() => {});
         onNo();
       }
     };
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
+
+    setTimeout(() => (document.activeElement as HTMLElement)?.blur(), 50);
+
+    document.addEventListener("keydown", fn, true);
+    return () => document.removeEventListener("keydown", fn, true);
   }, [isOpen, onYes, onNo]);
+
 
   // 버튼 스타일(shine 애니메이션은 reduce 설정을 따름)
   const { btnBase, yesStyle, noStyle } = useMemo(() => {
@@ -190,7 +196,7 @@ export default function ConfirmStartModal({
         as="section"
         position="absolute"
         inset={0}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
         borderRadius={0}
       >
         {/* 중앙 콘텐츠 + 버튼(바로 아래 배치) */}
@@ -226,7 +232,7 @@ export default function ConfirmStartModal({
                 onClick={() => {
                   if (yesSfxRef.current) yesSfxRef.current.currentTime = 0;
                   yesSfxRef.current?.play().catch(() => {});
-                  onYes();
+                  requestAnimationFrame(() => onYes());
                 }}
                 leftIcon={<Icon as={FiCheck} />}
                 sx={{ ...btnBase, ...yesStyle }}
