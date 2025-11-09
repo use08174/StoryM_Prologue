@@ -11,7 +11,7 @@ import {
   usePrefersReducedMotion,
 } from "@chakra-ui/react";
 import { FiChevronRight } from "react-icons/fi";
-import { PIXEL_PALETTE as C } from "./pixelpalette"; // 경로는 프로젝트에 맞게
+import { PIXEL_PALETTE as C } from "../pixelpalette"; // 경로는 프로젝트에 맞게
 
 export interface MessageModalProps {
   isOpen: boolean;

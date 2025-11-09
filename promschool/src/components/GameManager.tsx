@@ -18,7 +18,7 @@ import Topics from "rpg/data/topics";
 import { getGameState, saveGameState } from "rpg/data/persistence";
 import { initGA, logStartGame } from "analytics";
 import RateLimitModal from "./RateLimitModal";
-import MessageModal from "./MessageModal";
+import MessageModal from "./Quest1/MessageModal";
 import PhoneButton from "./PhoneButton";
 import ConfirmStartModal from "./ConfirmStartModal";
 import PubSub from "pubsub-js"; // 
