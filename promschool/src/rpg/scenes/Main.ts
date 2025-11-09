@@ -136,9 +136,9 @@ export default class Main extends Phaser.Scene {
 
 
       // 디버그 박스
-      this.add.graphics()
+      /*this.add.graphics()
         .lineStyle(2, 0xff0000)
-        .strokeRectShape(zone.getBounds());
+        .strokeRectShape(zone.getBounds());*/
 
       // 살짝 깜빡이는 효과 (선택사항)
       this.tweens.add({
