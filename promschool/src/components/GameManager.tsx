@@ -25,6 +25,7 @@ import PubSub from "pubsub-js"; //
 import Quest1 from "./Quest1/Quest1";
 import Quest2 from "./Quest2/Quest2";
 import Quest3 from "./Quest3/Quest3";
+import Quest4 from "./Quest4/Quest4";
 import PolicyTipIcon from "./PolicyTipIcon";
 
 export const GameManager = () => {
@@ -37,11 +38,11 @@ export const GameManager = () => {
   const [showQuest1, setShowQuest1] = useState(false);
   const [showQuest2, setShowQuest2] = useState(false); 
   const [showQuest3, setShowQuest3] = useState(false);
+  const [showQuest4, setShowQuest4] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showQuestModal, setShowQuestModal] = useState(false);
   const [currentQuest, setCurrentQuest] = useState(1); 
-  const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 |null>(null); // ⭐️ 어떤 퀘스트를 시작할지 구분
-
+  const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 | 4 | null>(null); 
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
   const [pendingAlarmSound, setPendingAlarmSound] = useState(false);
 
@@ -130,6 +131,10 @@ export const GameManager = () => {
       }),
       PubSub.subscribe(Topics.startQuest3, () => {
         setPendingQuest(3);
+        setShowConfirm(true);
+      }),
+      PubSub.subscribe((Topics as any).startQuest4, () => {
+        setPendingQuest(4);
         setShowConfirm(true);
       }),
     ];
@@ -266,6 +271,10 @@ export const GameManager = () => {
                   PubSub.publish(Topics.giveKeysToDom);
                   setShowQuest3(true);
                 }
+                if (pendingQuest === 4) {
+                  PubSub.publish(Topics.giveKeysToDom);
+                  setShowQuest4(true);
+                }
                 setPendingQuest(null);
             });
             }}
@@ -321,6 +330,21 @@ export const GameManager = () => {
               }}
               onFinish={() => {
                 setShowQuest3(false);
+                setPaused(false);  
+                PubSub.publish(Topics.giveKeysToGame);
+                handleQuestComplete();
+              }}
+            />
+          )}
+          {showQuest4 && (
+            <Quest4
+              onClose={() => {
+                setShowQuest4(false);
+                setPaused(false);  
+                PubSub.publish(Topics.giveKeysToGame);
+              }}
+              onFinish={() => {
+                setShowQuest4(false);
                 setPaused(false);  
                 PubSub.publish(Topics.giveKeysToGame);
                 handleQuestComplete();

@@ -71,6 +71,7 @@ export default class Main extends Phaser.Scene {
   private quest1!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
   private quest2!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
   private quest3!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
+  private quest4!: { zone: Phaser.GameObjects.Zone; text: Phaser.GameObjects.Text; questId: number };
   private activeQuestZone: number | null = null;
   private questStarted: boolean = false;
 
@@ -169,10 +170,16 @@ export default class Main extends Phaser.Scene {
       "🏢 이곳은 퀘스트 3 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
       3
     );
+    this.quest4 = createQuestZone(
+       -730,
+      -152,
+      "🏢 이곳은 주민센터입니다.\n[SPACE]를 눌러 전입신고를 시작하세요.",
+      4
+    );
     this.activeQuestZone = null;
     this.questStarted = false;
 
-    [this.quest1, this.quest2, this.quest3].forEach(({ zone, questId }) => {
+    [this.quest1, this.quest2, this.quest3, this.quest4].forEach(({ zone, questId }) => {
       this.physics.add.overlap(this.player, zone, () => {
         if (!this.questStarted) this.activeQuestZone = questId;
       });
@@ -469,7 +476,7 @@ export default class Main extends Phaser.Scene {
     }
 
     if (this.activeQuestZone) {
-      const activeQuest = [this.quest1, this.quest2, this.quest3].find(
+      const activeQuest = [this.quest1, this.quest2, this.quest3, this.quest4].find(
         (q) => q.questId === this.activeQuestZone
       );
       if (

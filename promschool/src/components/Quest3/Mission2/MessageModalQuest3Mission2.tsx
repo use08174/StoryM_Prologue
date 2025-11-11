@@ -4,7 +4,7 @@ import { FiChevronRight } from "react-icons/fi";
 import { PIXEL_PALETTE as C } from "../../pixelpalette";
 
 /** 화자 */
-type Speaker = "중개인" | "버디" | "나";
+type Speaker = "중개인" | "버디" | "나" | "임대인" | "공무원";
 type Line = { who: Speaker; text: string };
 
 /** 미션2 장면 키 */
@@ -25,9 +25,23 @@ export type Mission2Scene =
   | "contract_intro"
   | "contract_basic"
   | "contract_special"
+  | "contract_special_success" 
   | "contract_deposit_return"
   | "contract_address"
   | "contract_owner"
+  // 계약 완료
+  | "final_intro" 
+  | "final_take_contract" 
+  | "final_transfer" 
+  | "final_receipt" 
+  | "final_outro"
+  // 전입신고
+  | "transfer_intro"
+  | "transfer_visit"
+  | "transfer_online"
+  | "transfer_complete"
+  | "transfer_stamp"
+
   // 완료
   | "outro";
 
@@ -71,6 +85,16 @@ const META: Record<
   나: {
     avatar: "/assets/quest3_scenes/player.png",
     nameColor: "#3aa689",
+    bubbleTint: "#d9f7ef",
+  },
+  임대인: {
+    avatar: "/assets/quest3_scenes/owner.png",
+    nameColor: "#9c7519ff",
+    bubbleTint: "#d9f7ef",
+  },
+  공무원: {
+    avatar: "/assets/quest3_scenes/official.png",
+    nameColor: "#59b922ff",
     bubbleTint: "#d9f7ef",
   },
 };
@@ -140,12 +164,16 @@ const SCENES: Record<Mission2Scene, Line[]> = {
   contract_special: [
     { who: "버디", text: "특약은 계약서보다 우선. ‘임차인 전액/임차인 부담’은 위험!" },
     { who: "버디", text: "‘임차인이 원인 제공 시 부담’처럼 조건을 명확히 바꾸도록 요청해." },
-    { who: "나", text: "(②③④ 수정 요청해야겠다.)" },
+  ],
+  contract_special_success: [
+    { who: "나", text: "일부 특약사항은 임차인에게 너무 불리하네요.\n시설물 수리는 원칙적으로 임대인의 책임이니 ‘임차인 부담’,\n특약사항들은 ‘임차인이 원인 제공 시 부담’으로 수정해주세요." },
+    { who: "중개인", text: "좋습니다. ‘임차인이 원인 제공 시 부담’으로 반영해 임대인께 전달하겠습니다." },
+    { who: "버디", text: "잘했어! 위험 특약을 정정했어. 다음 항목도 꼼꼼히 확인하자." },
   ],
   contract_deposit_return: [
-    { who: "버디", text: "보증금 반환이 모호하면 지연돼. ‘종료일로부터 14일 이내, 임차인 계좌로’처럼 구체화!" },
-    { who: "나", text: "이 문구로 수정 요청하겠습니다." },
-    { who: "중개인", text: "네, 반영하여 임대인에게 전달하겠습니다." },
+    { who: "버디", text: "보증금 반환이 모호하면 지연돼. \n‘종료일로부터 14일 이내, 임차인 계좌로’처럼 구체화되어있어야 해!" },
+    { who: "나", text: "이 조항의 ‘확인 후 반환’ 부분을\n‘계약 종료일로부터 14일 이내, 임차인 계좌로 반환’으로 수정해 주세요." },
+    { who: "중개인", text: "네, 이것도 반영하여 임대인에게 전달하겠습니다." },
   ],
   contract_address: [
     { who: "버디", text: "계약서 ‘소재지’가 등기부/대장과 동일한지 확인." },
@@ -154,6 +182,47 @@ const SCENES: Record<Mission2Scene, Line[]> = {
   contract_owner: [
     { who: "버디", text: "임대인 인적사항(성명/주민번호 앞자리/주소)이 소유주와 일치하는지 재확인!" },
     { who: "나", text: "(임대인 정보 일치 확인.)" },
+  ],
+  final_intro: [
+  { who: "버디", text: "집 계약이 끝났다면 계약서 원본이나 사본을 꼭 받아 둬. 분쟁 시 중요한 근거야!" },
+  { who: "버디", text: "계약금·잔금은 반드시 '임대인 명의 계좌'로 송금하고, 영수증/거래명세서도 챙기자." },
+  ],
+  final_take_contract: [
+    { who: "중개인", text: "모든 서류 확인 끝났습니다. 계약서 원본 챙겨가세요." },
+    { who: "나", text: "(계약서 원본은 챙겼다!)" },
+  ],
+  final_transfer: [
+    { who: "중개인", text: "이제 소유주 명의 계좌로 계약금 잔금을 송금해 주세요." },
+  ],
+  final_receipt: [
+    { who: "나", text: "송금 완료했습니다!" },
+    { who: "임대인", text: "네, 이체 확인했습니다. 영수증 드릴게요." },
+    { who: "나", text: "(영수증도 받았고… 이제 정말 끝!)" },
+  ],
+  final_outro: [
+    { who: "버디", text: "완료! 다음은 주민센터 방문(전입신고/확정일자)으로 넘어가자." },
+  ],
+
+  transfer_intro: [
+  { who: "버디", text: "아직 한 단계가 남아있어! 주민센터에 방문하거나 온라인으로 전입신고를 해야 해." },
+  { who: "버디", text: "보증금 6천만 원 또는 월세 30만 원 초과 시, 30일 내 임대차계약 공동신고도 잊지 말자!" },
+  ],
+  transfer_visit: [
+    { who: "버디", text: "주민센터에 도착했어. 전입신고서 작성부터 해보자." },
+    { who: "공무원", text: "안녕하세요. 작성하신 전입신고서와 주민등록증 보여주세요." },
+    { who: "나", text: "네 여기요." },
+  ],
+  transfer_online: [
+  { who: "버디", text: "공인인증서만 있으면 집에서도 전입신고를 할 수 있어!" },
+  { who: "버디", text: "이건 정부24 사이트 화면이야. 여기에 로그인해서 절차를 진행하면 돼." },
+],
+  transfer_stamp: [
+    { who: "나", text: "확정일자 도장도 부탁드릴게요." },
+    { who: "공무원", text: "네, 완료되었습니다." },
+  ],
+  transfer_complete: [
+    { who: "버디", text: "전입신고와 확정일자까지 완료! 이제 정말 내 집이야 🏡" },
+    { who: "버디", text: "계약서 원본, 영수증, 확정일자 증서 모두 잘 보관해!" },
   ],
 
   /* 완료 */
@@ -170,7 +239,7 @@ export default function MessageModalQuest3Mission2({
   onClose,
   scene = "intro",
   dimBackground = true,
-  messages,                 // ▲ custom 모드 (옵션)
+  messages,                 
   avatarSrc,
   title,
   themeColor = "#815b3a",
