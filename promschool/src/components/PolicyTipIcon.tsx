@@ -46,7 +46,7 @@ export default function PolicyTipIcon({
   topicType, topicName,
   characterId, userId, characterMeta,
   boxSize = "60px",
-  src = "/assets/sprites/storym_scenario.png",
+  src = "/assets/sprites/storym_tip.png",
 }: Props) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [loading, setLoading] = useState(false);

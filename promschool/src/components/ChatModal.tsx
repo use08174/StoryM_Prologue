@@ -1,276 +1,263 @@
+// src/components/ChatModal.tsx
+import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import {
-  IconButton,
+  Box,
+  VStack,
+  HStack,
+  Textarea,
+  Button,
+  Text,
+  Image,
+  Spinner,
   Modal,
   ModalOverlay,
   ModalContent,
+  ModalHeader,
+  ModalCloseButton,
   ModalBody,
-  useDisclosure,
-  AspectRatio,
-  Box,
-  Image,
-  Center,
-  Flex,
-  Text,
-  Stack,
-  Card,
-  CardBody,
-  VStack,
-  Input,
-  FormControl,
-  Textarea,
 } from "@chakra-ui/react";
-import characters from "rpg/data/characters";
-import Topics from "rpg/data/topics";
-import { EastworldClient, Message } from "eastworld-client";
-import { useEffect, useRef, useState } from "react";
-import { ArrowForwardIcon } from "@chakra-ui/icons";
-import { EnglishToKorean, KoreanToEnglish } from "./util/Korean";
 
-type ChatModalProps = {
-  sessionId: string;
-  eastworldClient: EastworldClient;
-  notes: string;
-  setNotes: (notes: string) => void;
+type Role = "user" | "buddy" | "agent" | "assistant";
+interface ChatMessage {
+  role: Role;
+  content: string;
+}
+
+type Props = {
+  isOpen: boolean;
+  onClose: () => void;
 };
 
-const ChatModal = (props: ChatModalProps) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [agentName, setAgentName] = useState("");
-  const [photoPath, setPhotoPath] = useState("");
-  const [message, setMessage] = useState<string>("");
-  const [messageHistory, setMessageHistory] = useState<Message[]>([]);
-  const boxRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (boxRef.current) {
-      boxRef.current.scrollTop = boxRef.current.scrollHeight;
+/** 환경변수 안전 로더 (Vite / Next / CRA 모두 지원) */
+const getApiBase = () => {
+  // Vite
+  try {
+    if (typeof import.meta !== "undefined" && (import.meta as any)?.env?.VITE_API_BASE_URL) {
+      return (import.meta as any).env.VITE_API_BASE_URL as string;
     }
-  }, [messageHistory]);
+  } catch {}
+  // Next.js
+  if (typeof process !== "undefined" && (process as any)?.env?.NEXT_PUBLIC_API_BASE) {
+    return (process as any).env.NEXT_PUBLIC_API_BASE as string;
+  }
+  // CRA
+  if (typeof process !== "undefined" && (process as any)?.env?.REACT_APP_API_BASE_URL) {
+    return (process as any).env.REACT_APP_API_BASE_URL as string;
+  }
+  // Fallback
+  return "http://localhost:8000";
+};
 
+export default function ChatModal({ isOpen, onClose }: Props) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const controllerRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 자동 스크롤
   useEffect(() => {
-    if (!agentName) return;
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages]);
 
-    setMessageHistory([]);
+  // 모달 닫힐 때 스트림 중지
+  useEffect(() => {
+    if (!isOpen && controllerRef.current) {
+      controllerRef.current.abort();
+      controllerRef.current = null;
+    }
+  }, [isOpen]);
 
-    props.eastworldClient.gameSessions.startChat(
-      props.sessionId,
-      EnglishToKorean(agentName),
-      EnglishToKorean(characters.main_girl.eastworldId!),
-      { history: [], conversation: {} },
-    );
-  }, [agentName]);
+  const sendMessage = async () => {
+    const text = input.trim();
+    if (!text) return;
 
-  const chat = async (message: string) => {
-    setMessageHistory(messages => [
-      ...messages,
-      { role: Message.role.USER, content: message },
-    ]);
+    // 사용자 메시지 추가
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setInput("");
+    setLoading(true);
 
-    setMessage("");
-
-    let interact;
+    // 스트림 제어
+    controllerRef.current = new AbortController();
 
     try {
-      interact = await props.eastworldClient.gameSessions.interact(
-        props.sessionId,
-        EnglishToKorean(agentName),
-        message,
-      );
-    } catch (e) {
-      return;
-    }
+      const API_BASE_URL = getApiBase();
+      // console.log("[Chat] API_BASE_URL =>", API_BASE_URL);
 
-    const response = interact.response;
-
-    if ("content" in response) {
-      setMessageHistory(messages => [...messages, response]);
-    } else {
-      close();
-
-      PubSub.publish(Topics.action, {
-        character: EnglishToKorean(agentName),
-        action: response.action,
+      const res = await fetch(`${API_BASE_URL}/llm/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: text,
+          user_id: "demo_user",
+          character_id: 0,
+        }),
+        signal: controllerRef.current.signal,
       });
+
+      if (!res.ok || !res.body) {
+        throw new Error(`No response stream (status ${res.status})`);
+      }
+
+      // AI 버블(버디) 미리 추가
+      let aiText = "";
+      setMessages((m) => [...m, { role: "buddy", content: "" }]);
+
+      // 서버가 text/plain 스트림을 주므로 chunk를 그대로 이어붙인다
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        aiText += chunk;
+
+        setMessages((m) => {
+          const updated = [...m];
+          const last = updated.length - 1;
+          updated[last] = { ...updated[last], content: aiText };
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error("Chat stream error:", err);
+      setMessages((m) => [
+        ...m,
+        { role: "agent", content: "⚠️ 연결 오류가 발생했습니다. 다시 시도해주세요." },
+      ]);
+    } finally {
+      setLoading(false);
+      controllerRef.current = null;
     }
   };
 
-  PubSub.subscribe(Topics.enterChat, (_channel, message: string) => {
-    setAgentName(message);
-    setPhotoPath(characters[message as keyof typeof characters].photo);
-    onOpen();
-  });
-
-  const close = () => {
-    PubSub.publish(Topics.giveKeysToGame);
-    onClose();
+  const onEnterSend = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!loading) sendMessage();
+    }
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const renderMessage = (msg: ChatMessage, idx: number) => {
+    const isUser = msg.role === "user";
+    const isBuddy = msg.role === "buddy";
+    const isAgent = msg.role === "agent";
+
+    const bubbleColor = isUser
+      ? "teal.600"
+      : isBuddy
+      ? "#7E44A8" // 버디(보라)
+      : isAgent
+      ? "orange.600"
+      : "gray.600";
+
+    const name = isUser ? "나" : isBuddy ? "버디" : isAgent ? "중개인" : "AI";
+    const avatar = isUser
+      ? "/assets/avatars/player.png"
+      : isBuddy
+      ? "/assets/avatars/buddy.png"
+      : "/assets/avatars/agent.png";
+
+    return (
+      <HStack
+        key={idx}
+        align="flex-start"
+        justify={isUser ? "flex-end" : "flex-start"}
+        spacing={2}
+        mb={2}
+      >
+        {!isUser && <Image src={avatar} w="36px" h="36px" borderRadius="md" alt={name} />}
+        <Box maxW="72%">
+          {!isUser && (
+            <Text fontSize="xs" color="gray.300" mb={1} fontFamily="NeoDGM">
+              {name}
+            </Text>
+          )}
+          <Text
+            bg={bubbleColor}
+            px={3}
+            py={2}
+            borderRadius="xl"
+            color="white"
+            whiteSpace="pre-wrap"
+            fontFamily="NeoDGM, sans-serif"
+            boxShadow="0 2px 4px rgba(0,0,0,0.25)"
+          >
+            {msg.content}
+          </Text>
+        </Box>
+        {isUser && <Image src={avatar} w="36px" h="36px" borderRadius="md" alt={name} />}
+      </HStack>
+    );
   };
 
   return (
-    <>
-      <Modal isOpen={isOpen} onClose={close} isCentered>
-        <ModalOverlay onClick={close} />
-        <ModalContent
-          maxW="90vw"
-          maxH="fit-content"
-          bg="transparent"
-          boxShadow="none"
-        >
-          <ModalBody>
-            <VStack>
-              <Stack
-                direction={{ base: "column", xl: "row" }}
-                width="100%"
-                height="auto"
-                justifyContent="center"
-                alignItems="center"
-                gap={4}
-              >
-                <AspectRatio
-                  width={{ base: "100%", xl: "50%" }}
-                  height="70vh"
-                  ratio={1}
-                  onClick={handleCardClick}
-                >
-                  <Center paddingLeft={3} paddingRight={3}>
-                    <Image src={photoPath} objectFit={"cover"}></Image>
-                    <Center
-                      position="absolute"
-                      bottom="0"
-                      width="100%"
-                      bg="blackAlpha.700"
-                      height="15%"
-                      borderRadius={"l"}
-                      fontFamily={"pretendardExtraBold"}
-                      textColor={"white"}
-                      fontSize={"3xl"}
-                      textAlign={"center"}
-                      letterSpacing={"0.2rem"}
-                    >
-                      {EnglishToKorean(agentName)}
-                    </Center>
-                  </Center>
-                </AspectRatio>
-                <AspectRatio
-                  width={{ base: "100%", xl: "50%" }}
-                  height="70vh"
-                  ratio={1}
-                  paddingLeft={3}
-                  paddingRight={3}
-                  borderRadius="xl"
-                  onClick={handleCardClick}
-                >
-                  <Card
-                    width="100%"
-                    height="100%"
-                    fontFamily={"pretendardLight"}
-                  >
-                    <CardBody width="100%" height="100%">
-                      <Flex direction="column" h="full">
-                        <Box
-                          ref={boxRef}
-                          flexGrow={1}
-                          overflow={"auto"}
-                          fontSize={"xl"}
-                          marginBottom={2}
-                        >
-                          {messageHistory.map((message, index) => (
-                            <Box
-                              key={index}
-                              borderRadius={"0.5vw"}
-                              paddingTop={1}
-                              paddingBottom={1}
-                              paddingLeft={3}
-                              paddingRight={3}
-                              marginBottom={3}
-                              width={"fit-content"}
-                              color="white"
-                              backgroundColor={
-                                message.role === Message.role.USER
-                                  ? "gray.900"
-                                  : "red.500"
-                              }
-                              marginLeft={
-                                message.role === Message.role.USER
-                                  ? "auto"
-                                  : "0"
-                              }
-                              marginRight={
-                                message.role !== Message.role.USER
-                                  ? "auto"
-                                  : "0"
-                              }
-                            >
-                              <Text key={index}>{message.content}</Text>
-                            </Box>
-                          ))}
-                        </Box>
-                        <form
-                          onSubmit={e => {
-                            e.preventDefault();
-                            chat(message);
-                          }}
-                        >
-                          <Flex width="100%">
-                            <FormControl flex="1">
-                              <Input
-                                fontFamily={"pretendardLight"}
-                                size={"lg"}
-                                autoComplete="off"
-                                value={message}
-                                onChange={e => setMessage(e.target.value)}
-                              />
-                            </FormControl>
-                            <IconButton
-                              ml={2}
-                              flexShrink={0}
-                              colorScheme="red"
-                              size={"lg"}
-                              type="submit"
-                              aria-label="Submit"
-                              icon={<ArrowForwardIcon />}
-                            ></IconButton>
-                          </Flex>
-                        </form>
-                      </Flex>
-                    </CardBody>
-                  </Card>
-                </AspectRatio>
-              </Stack>
-              <Card
-                width={"100%"}
-                height={"15%"}
-                borderRadius="xl"
-                onClick={handleCardClick}
-              >
-                <CardBody
-                  width="100%"
-                  height="100%"
-                  borderRadius="xl"
-                  boxShadow="lg"
-                  bg="blackAlpha.900"
-                  color="white"
-                >
-                  <Textarea
-                    size={"lg"}
-                    resize={"none"}
-                    rows={5}
-                    fontFamily={"pretendardLight"}
-                    placeholder="이곳에 발견한 증거를 기록해보세요..."
-                    value={props.notes}
-                    onChange={e => props.setNotes(e.target.value)}
-                  ></Textarea>
-                </CardBody>
-              </Card>
-            </VStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </>
-  );
-};
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+      <ModalOverlay bg="rgba(0,0,0,0.7)" />
+      <ModalContent bg="#1a1b22" color="white" border="2px solid #7E44A8" borderRadius="xl" p={3}>
+        <ModalHeader fontFamily="NeoDGM">StoryM 대화창</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <VStack spacing={4} align="stretch">
+            {/* 대화 영역 */}
+            <Box
+              ref={scrollRef}
+              h="420px"
+              overflowY="auto"
+              p={3}
+              bg="#121318"
+              borderRadius="lg"
+              border="1px solid rgba(255,255,255,0.1)"
+              sx={{
+                "&::-webkit-scrollbar": { width: "6px" },
+                "&::-webkit-scrollbar-thumb": { background: "#7E44A8", borderRadius: "3px" },
+              }}
+            >
+              {messages.map(renderMessage)}
+              {loading && (
+                <HStack mt={2}>
+                  <Spinner size="sm" color="#FCCFDB" />
+                  <Text fontSize="sm" color="gray.400">
+                    응답 생성 중...
+                  </Text>
+                </HStack>
+              )}
+            </Box>
 
-export default ChatModal;
+            {/* 입력 */}
+            <HStack>
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={onEnterSend}
+                placeholder="메시지를 입력하세요..."
+                bg="#1a1b22"
+                border="1px solid #7E44A8"
+                resize="none"
+                rows={1}
+                fontFamily="NeoDGM"
+                isDisabled={loading}
+              />
+              <Button
+                onClick={sendMessage}
+                colorScheme="purple"
+                isLoading={loading}
+                px={6}
+                borderRadius="md"
+                fontFamily="NeoDGM"
+              >
+                전송
+              </Button>
+            </HStack>
+          </VStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  );
+}
