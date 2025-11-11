@@ -12,3 +12,9 @@ pdm.lock
 Thumbs.db
 pyproject.toml
 .env
+
+# Database files
+*.db
+*.db.backup
+*.sqlite
+*.sqlite3

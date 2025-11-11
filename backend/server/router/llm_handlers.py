@@ -2,6 +2,7 @@ from typing import List, Optional, Dict
 import re
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from llm.base import LLMBase
@@ -197,22 +198,18 @@ def format_policy_context(policies: List[Dict]) -> str:
     return "\n\n".join(context_parts)
 
 
-@router.post("/chat", operation_id="chat_simple", response_model=ChatResponse)
-async def chat_simple(
+def _build_user_message(
     req: ChatRequest,
-    llm: LLMBase = Depends(get_llm),
-    db: Session = Depends(get_db_session),
-) -> ChatResponse:
-    messages: List[Message] = []
+    db: Session,
+) -> Message:
+    """Generate a user message with optional character context."""
     user_prompt = req.prompt
-    
-    # character_id가 제공되면 해당 캐릭터 정보 조회
+
     if req.character_id:
         character_repo = CharacterRepository(db)
         character = character_repo.get(req.character_id)
-        
+
         if character:
-            # character 정보를 context로 추가
             context_lines = []
             if character.job:
                 context_lines.append(f"직업: {character.job}")
@@ -220,16 +217,14 @@ async def chat_simple(
                 context_lines.append(f"성별: {character.gender}")
             if character.region:
                 context_lines.append(f"사는지역: {character.region}")
-            
+
             if context_lines:
                 user_prompt = "\n".join(context_lines) + "\n\n" + user_prompt
-    # character_id가 없고 user_id만 제공된 경우 (기존 로직 유지)
     elif req.user_id:
         character_repo = CharacterRepository(db)
         characters = character_repo.get_by_user_id(req.user_id)
-        # Use the first character if available
-        if characters and len(characters) > 0:
-            character = characters[0]  # Use first character
+        if characters:
+            character = characters[0]
             context_lines = []
             if character.gender:
                 context_lines.append(f"성별: {character.gender}")
@@ -239,10 +234,36 @@ async def chat_simple(
                 context_lines.append(f"직업: {character.job}")
             if context_lines:
                 user_prompt = "\n".join(context_lines) + "\n\n" + user_prompt
-    
-    messages.append(Message(role="user", content=user_prompt))
+
+    return Message(role="user", content=user_prompt)
+
+
+@router.post("/chat", operation_id="chat_simple", response_model=ChatResponse)
+async def chat_simple(
+    req: ChatRequest,
+    llm: LLMBase = Depends(get_llm),
+    db: Session = Depends(get_db_session),
+) -> ChatResponse:
+    messages: List[Message] = [_build_user_message(req, db)]
     result = await llm.chat_completion(messages)
     return ChatResponse(content=result.content or "")
+
+
+@router.post("/chat/stream", operation_id="chat_stream")
+async def chat_stream(
+    req: ChatRequest,
+    llm: LLMBase = Depends(get_llm),
+    db: Session = Depends(get_db_session),
+):
+    """Streaming LLM chat endpoint."""
+    messages: List[Message] = [_build_user_message(req, db)]
+
+    async def event_generator():
+        async for chunk in llm.stream_chat_completion(messages):
+            yield f"data: {chunk}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.post("/extract-policy-context", operation_id="extract_policy_context", response_model=ExtractPolicyContextResponse)

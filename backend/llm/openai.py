@@ -160,6 +160,31 @@ class OpenAIInterface(LLMBase):
         content = resp.choices[0].message.content or ""
         return Message(role="assistant", content=content)
 
+    async def stream_chat_completion(
+        self,
+        messages: List[Message],
+    ):
+        """
+        스트리밍 기반 채팅 응답.
+        """
+        stream = await self._client.chat.completions.create(
+            model=self._model,
+            messages=_parse_messages(messages),
+            stream=True,
+        )
+        try:
+            async for event in stream:
+                if not event.choices:
+                    continue
+                delta = event.choices[0].delta
+                if delta and getattr(delta, "content", None):
+                    yield delta.content
+        finally:
+            try:
+                await stream.aclose()
+            except Exception:
+                pass
+
     async def action_completion(
         self,
         messages: List[Message],
