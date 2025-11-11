@@ -79,28 +79,28 @@ export default function DocBuilding({ onComplete, setBuddyMsg }: Props) {
       {step === "위반건축물" && (
         <>
           <Image src="/assets/quest3_scenes/building.png" w="700px" />
-          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>이전으로</Button>
         </>
       )}
 
       {step === "주소" && (
         <>
           <Image src="/assets/quest3_scenes/building_address.png" w="700px" />
-          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>이전으로</Button>
         </>
       )}
 
       {step === "소유자" && (
         <>
           <Image src="/assets/quest3_scenes/building_owner.png" w="700px" />
-          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>이전으로</Button>
         </>
       )}
 
       {step === "용도" && (
         <>
           <Image src="/assets/quest3_scenes/building_usage.png" w="700px" />
-          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+          <Button onClick={() => setStep("main")} mt={3} {...pixelBorder()}>이전으로</Button>
         </>
       )}
 
