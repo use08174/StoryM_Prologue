@@ -108,7 +108,7 @@ export default function DocDeunggi({ onComplete }: Props) {
         <>
           <Image src="/assets/quest3_scenes/deunggi_pyojabu.png" w="700px" />
           <Button onClick={() => setStep("main")} mt={3} {...pixelBorder(C.primary, C.primary)}>
-            전체 보기로
+             이전으로
           </Button>
         </>
       )}
@@ -116,7 +116,7 @@ export default function DocDeunggi({ onComplete }: Props) {
         <>
           <Image src="/assets/quest3_scenes/deunggi_ga.png" w="700px" />
           <Button onClick={() => setStep("main")} mt={3} {...pixelBorder(C.primary, C.primary)}>
-            전체 보기로
+            이전으로
           </Button>
         </>
       )}
@@ -124,12 +124,11 @@ export default function DocDeunggi({ onComplete }: Props) {
         <>
           <Image src="/assets/quest3_scenes/deunggi_ul.png" w="700px" />
           <Button onClick={() => setStep("main")} mt={3} {...pixelBorder(C.primary, C.primary)}>
-            전체 보기로
+            이전으로
           </Button>
         </>
       )}
 
-      {/* 💬 메시지 모달 (scene 기반) */}
       <MessageModalQuest3
         isOpen={showMsg}
         onComplete={() => setShowMsg(false)}

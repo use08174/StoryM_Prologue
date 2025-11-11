@@ -124,8 +124,8 @@ export default function DocContract({ onComplete, setBuddyMsg }: Props) {
     }
     markVisited("특약사항");
     openScene(
-      "contract_special",
-      "잘 골랐어! ‘임차인이 원인 제공 시 부담’처럼 조건을 명확히 바꾸자."
+      "contract_special_success",
+      "잘 골랐어! ‘임차인이 원인 제공 시 부담’으로 수정 요청 완료!"
     );
   };
 
@@ -145,7 +145,7 @@ export default function DocContract({ onComplete, setBuddyMsg }: Props) {
       {step === "main" && (
         <>
           <Image src="/assets/quest3_scenes/contract.png" w="360px" />
-          <VStack spacing={3}>
+          <VStack spacing={5}>
             <HStack wrap="wrap" spacing={3}>
               <Button onClick={() => goStep("기본조항")} bg={C.accent} color={C.primary} _hover={{ bg:C.accent }} {...pixelBorder()}>기본 조항 보기</Button>
               <Button onClick={() => goStep("특약사항")} bg={C.accent} color={C.primary} _hover={{ bg:C.accent }} {...pixelBorder()}>특약사항 보기</Button>
@@ -159,7 +159,6 @@ export default function DocContract({ onComplete, setBuddyMsg }: Props) {
               colorScheme="teal"
               mt={2}
               onClick={() => { openScene("outro"); onComplete(); }}
-              isDisabled={!allDone}
               {...pixelBorder()}
             >
               임대차계약서 점검 완료
@@ -172,7 +171,7 @@ export default function DocContract({ onComplete, setBuddyMsg }: Props) {
       {step === "기본조항" && (
         <>
           <Image src="/assets/quest3_scenes/contract_basic.png" w="400px" />
-          <Button onClick={() => completeSection("기본조항")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+          <Button onClick={() => completeSection("기본조항")} mt={3} {...pixelBorder()}>이전으로</Button>
         </>
       )}
 
@@ -205,7 +204,7 @@ export default function DocContract({ onComplete, setBuddyMsg }: Props) {
           </HStack>
 
           <HStack>
-            <Button variant="outline" onClick={() => setStep("main")} {...pixelBorder()}>전체 보기로</Button>
+            <Button variant="outline" onClick={() => setStep("main")} {...pixelBorder()}>이전으로</Button>
             <Button
               colorScheme="purple"
               onClick={handleFixRequest}
@@ -221,20 +220,20 @@ export default function DocContract({ onComplete, setBuddyMsg }: Props) {
       {/* 보증금/주소/소유자 */}
       {step === "보증금" && (
         <>
-          <Image src="/assets/quest3_scenes/contract_deposit.png" w="700px" />
-          <Button onClick={() => completeSection("보증금")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+          <Image src="/assets/quest3_scenes/contract_deposit.png" w="500px" />
+          <Button onClick={() => completeSection("보증금")} mt={3} {...pixelBorder()}>이전으로</Button>
         </>
       )}
       {step === "주소" && (
         <>
-          <Image src="/assets/quest3_scenes/contract_address.png" w="700px" />
-          <Button onClick={() => completeSection("주소")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+          <Image src="/assets/quest3_scenes/contract_address.png" w="500px" />
+          <Button onClick={() => completeSection("주소")} mt={3} {...pixelBorder()}>이전으로</Button>
         </>
       )}
       {step === "소유자" && (
         <>
-          <Image src="/assets/quest3_scenes/contract_owner.png" w="700px" />
-          <Button onClick={() => completeSection("소유자")} mt={3} {...pixelBorder()}>전체 보기로</Button>
+          <Image src="/assets/quest3_scenes/contract_owner.png" w="500px" />
+          <Button onClick={() => completeSection("소유자")} mt={3} {...pixelBorder()}>이전으로</Button>
         </>
       )}
 
@@ -243,7 +242,7 @@ export default function DocContract({ onComplete, setBuddyMsg }: Props) {
         isOpen={showMsg}
         onComplete={() => setShowMsg(false)}
         onClose={() => setShowMsg(false)}
-        scene={scene} // contract_intro / contract_basic / contract_terms / contract_fix_request / contract_deposit / contract_address / contract_owner / contract_done
+        scene={scene} 
       />
     </VStack>
   );

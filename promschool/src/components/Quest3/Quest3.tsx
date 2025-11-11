@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Box, Button, Text, VStack } from "@chakra-ui/react";
 import Mission1 from "./Mission1";
 import Mission2 from "./Mission2/Mission2";
+import FinalizeContract from "./Mission2/FinalizeContract"; 
 import MessageModalQuest3 from "./Mission2/MessageModalQuest3Mission2";
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 };
 
 export default function Quest3({ onClose, onFinish }: Props) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1); 
   const [m1Result, setM1Result] = useState<boolean | null>(null);
   const [showM2Intro, setShowM2Intro] = useState(false); // ✅ 미션2 인트로 모달
 
@@ -102,8 +103,18 @@ export default function Quest3({ onClose, onFinish }: Props) {
         </>
       )}
 
-      {/* STEP 3: 퀘스트3 전체 완료 */}
+      {/* STEP 3: 계약 완료하기 (원본 수령 + 송금 + 영수증) */}
       {step === 3 && (
+        <FinalizeContract
+          onFinished={() => {
+            // 계약 절차 완료 → 최종 완료 화면
+            setStep(4);
+          }}
+        />
+      )}
+
+      {/* STEP 4: 퀘스트3 전체 완료 */}
+      {step === 4 && (
         <VStack spacing={5}>
           <Text fontSize="2xl" fontWeight="bold" color="teal.300">
             [QUEST 3 COMPLETE!]
