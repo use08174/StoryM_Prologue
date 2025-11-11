@@ -19,6 +19,13 @@ class LLMBase:
         """Returns a chat completion from the LLM."""
 
     @abstractmethod
+    async def stream_chat_completion(
+        self,
+        messages: List[Message],
+    ):
+        """Yields partial chat completion chunks from the LLM."""
+
+    @abstractmethod
     async def action_completion(
         self, messages: List[Message], functions: List[Dict[str, str]]
     ) -> Optional[ActionCompletion]:
