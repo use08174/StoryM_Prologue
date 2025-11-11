@@ -255,15 +255,23 @@ async def chat_stream(
     llm: LLMBase = Depends(get_llm),
     db: Session = Depends(get_db_session),
 ):
-    """Streaming LLM chat endpoint."""
+    """
+    Streaming LLM chat endpoint (text stream, not SSE).
+    Frontend reads chunks continuously using fetch + reader.read().
+    """
     messages: List[Message] = [_build_user_message(req, db)]
 
     async def event_generator():
+        # gpt-4o-mini 등의 모델로부터 스트림 형태로 응답 받기
         async for chunk in llm.stream_chat_completion(messages):
-            yield f"data: {chunk}\n\n"
-        yield "data: [DONE]\n\n"
+            # yield는 바로바로 한 조각씩 프론트로 전송됨
+            yield chunk
+        # 스트림 종료 시 마지막 신호 전송
+        yield "[DONE]"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    # text/event-stream 대신 text/plain으로 — 단순 텍스트 스트림
+    return StreamingResponse(event_generator(), media_type="text/plain")
+
 
 
 @router.post("/extract-policy-context", operation_id="extract_policy_context", response_model=ExtractPolicyContextResponse)

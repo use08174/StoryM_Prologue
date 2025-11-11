@@ -1,4 +1,3 @@
-// src/components/Quest4/Quest4.tsx
 import { useState } from "react";
 import { Box, Button, VStack, Text, Image, Link } from "@chakra-ui/react";
 import MessageModalQuest3 from "../Quest3/Mission2/MessageModalQuest3Mission2";

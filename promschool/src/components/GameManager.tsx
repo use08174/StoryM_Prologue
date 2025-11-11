@@ -45,7 +45,7 @@ export const GameManager = () => {
   const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 | 4 | null>(null); 
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
   const [pendingAlarmSound, setPendingAlarmSound] = useState(false);
-
+  const [showChatModal, setShowChatModal] = useState(false);
   const eastworldClient = new EastworldClient({ BASE: "/api" });
 
 
@@ -194,29 +194,31 @@ export const GameManager = () => {
             spacing={3}
             zIndex={10}
           >
-            {/* Phone 버튼 (그대로) */}
+            {/* 알림 */}
             <PhoneButton
               alarm={alarm}
               highlight={alarm > 0 && !showMsg}
               onClick={() => {
                 setShowMsg(true);
                 setAlarm(0);
-                setPaused(false);            // ✅ 버튼 클릭 시 일시정지 해제
+                setPaused(false);            
                 PubSub.publish(Topics.giveKeysToDom);
               }}
             />
 
-            {/* Info 아이콘만 */}
+            {/* 챗봇 */}
+            <>
             <Image
-              src="/assets/sprites/storym_info.png"
+              src="/assets/sprites/storym_chat.png"
               alt="quest"
               boxSize="60px"
               cursor="pointer"
               _hover={{ transform: "scale(1.06)" }}
-              onClick={() => setShowQuestModal(true)}
+              onClick={() => setShowChatModal(true)}
             />
-
-            {/* API아이콘만 */}
+            <ChatModal isOpen={showChatModal} onClose={() => setShowChatModal(false)} />
+            </>
+            {/* API */}
             <PolicyTipIcon
               topicType="lclsf"         
               topicName="취업"           
@@ -224,8 +226,18 @@ export const GameManager = () => {
               boxSize="60px"
             />
 
+            {/* 퀘스트 진행현황 */}
+            <Image
+              src="/assets/sprites/storym_scenario.png"
+              alt="quest"
+              boxSize="60px"
+              cursor="pointer"
+              _hover={{ transform: "scale(1.06)" }}
+              onClick={() => setShowQuestModal(true)}
+            />
 
-            {/* Settings 아이콘만 */}
+
+            {/* Settings */}
             <Image
               src="/assets/sprites/storym_settings.png"
               alt="settings"
@@ -352,14 +364,7 @@ export const GameManager = () => {
             />
           )}
 
-          <ChatModal
-            eastworldClient={eastworldClient}
-            sessionId={sessionId}
-            notes=""
-            setNotes={() => {}}
-          />
-          <EvidenceModal /> 
-          <PoliceModal eastworldClient={eastworldClient} />
+        
           <RateLimitModal />
         </Box>
       )}
