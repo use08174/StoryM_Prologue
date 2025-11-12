@@ -1,4 +1,4 @@
-// components/MessageModal.tsx
+// components/Quest1/MessageModal.tsx
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Box,
@@ -10,6 +10,7 @@ import {
   Icon,
   usePrefersReducedMotion,
 } from "@chakra-ui/react";
+import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton,Button } from "@chakra-ui/react";
 import { FiChevronRight } from "react-icons/fi";
 import { PIXEL_PALETTE as C } from "../pixelpalette"; // 경로는 프로젝트에 맞게
 
@@ -51,7 +52,7 @@ const DEFAULT_MESSAGES: string[] = [
   "좋아! 이제 작은 미니게임으로 예산 감각을 키워보자. (Enter로 진행)",
 ];
 
-export default function MessageModal({
+export default function Quest1MessageModal({
   isOpen,
   onComplete,
   onClose,

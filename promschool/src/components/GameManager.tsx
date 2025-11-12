@@ -1,3 +1,4 @@
+// src/components/GameManager.tsx
 import {
   Box,
   Center,
@@ -5,59 +6,117 @@ import {
   Spinner,
   Image,
   Text,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  VStack,
+  Button,
+  useToast,
 } from "@chakra-ui/react";
 import ChatModal from "./ChatModal";
-import EvidenceModal from "./EvidenceModal";
 import QuestStatusModal from "./QuestStatusModal";
 import { EastworldClient } from "eastworld-client";
 import { useEffect, useRef, useState } from "react";
 import { Game } from "./Game";
-import PoliceModal from "./PoliceModal";
 import ResultScreen, { ResultScreenProps } from "./ResultScreen";
 import Topics from "rpg/data/topics";
 import { getGameState, saveGameState } from "rpg/data/persistence";
 import { initGA, logStartGame } from "analytics";
 import RateLimitModal from "./RateLimitModal";
-import MessageModal from "./Quest1/MessageModal";
 import PhoneButton from "./PhoneButton";
 import ConfirmStartModal from "./ConfirmStartModal";
-import PubSub from "pubsub-js"; // 
+import PubSub from "pubsub-js";
 import Quest1 from "./Quest1/Quest1";
 import Quest2 from "./Quest2/Quest2";
 import Quest3 from "./Quest3/Quest3";
 import Quest4 from "./Quest4/Quest4";
 import PolicyTipIcon from "./PolicyTipIcon";
 
+
+/** 폰 알림 클릭 시 띄우는 챗봇 인트로 모달 */
+function PhoneIntroModal({
+  isOpen,
+  onClose,
+  onOpenChat,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onOpenChat: () => void;
+}) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
+      <ModalOverlay bg="blackAlpha.700" />
+      <ModalContent bg="#121318" color="white" border="2px solid #7E44A8" borderRadius="xl">
+        <ModalHeader fontFamily="NeoDGM">📱 StoryM 기능 안내</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <VStack align="stretch" spacing={4}>
+            <Text fontFamily="NeoDGM" textAlign="center">
+              첫 독립을 축하해!<br/>  <br/>{" "}
+              <b style={{ color: "#FCCFDB" }}>챗봇 아이콘</b>을 누르면
+              언제든지 챗봇에게 질문할 수 있어. <br/> <b style={{ color: "#FCCFDB" }}>뉴스 아이콘</b>을 누르면 서류 확인, 계약 팁을 확인할 수 있어.
+              <b style={{ color: "#FCCFDB" }}>종이 아이콘</b>을 누르면 퀘스트 진행현황을 확인할 수 있어.
+            </Text>
+            <Text fontFamily="NeoDGM" textAlign="center">자, 이제 퀘스트 1을 시작해 볼까? <br/></Text>
+            <HStack justify="flex-end" spacing={3}>
+              <Button onClick={onOpenChat} colorScheme="purple" variant="solid">
+                챗봇 바로 열기
+              </Button>
+              <Button onClick={onClose} colorScheme="teal" variant="outline">
+                메인으로 (Space로 시작)
+              </Button>
+            </HStack>
+          </VStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  );
+}
+
 export const GameManager = () => {
   const [sessionId, setSessionId] = useState<string>();
   const [endResult, setEndResult] = useState<ResultScreenProps>();
   const [exp, setExp] = useState(0);
+
   const [alarm, setAlarm] = useState(0);
-  const [paused, setPaused] = useState(false); 
-  const [showMsg, setShowMsg] = useState(false);
+  const [paused, setPaused] = useState(false);
+
+  // 🔔 폰 인트로 & 챗봇
+  const [showPhoneIntro, setShowPhoneIntro] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+
+  // 퀘스트 모달들
   const [showQuest1, setShowQuest1] = useState(false);
-  const [showQuest2, setShowQuest2] = useState(false); 
+  const [showQuest2, setShowQuest2] = useState(false);
   const [showQuest3, setShowQuest3] = useState(false);
   const [showQuest4, setShowQuest4] = useState(false);
+
   const [showConfirm, setShowConfirm] = useState(false);
   const [showQuestModal, setShowQuestModal] = useState(false);
-  const [currentQuest, setCurrentQuest] = useState(1); 
-  const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 | 4 | null>(null); 
+
+  const [currentQuest, setCurrentQuest] = useState(1);
+  const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 | 4 | null>(null);
+
+  const [spaceHint, setSpaceHint] = useState(false); // Space 안내 뱃지
+  const toast = useToast();
+
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
   const [pendingAlarmSound, setPendingAlarmSound] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
+
   const eastworldClient = new EastworldClient({ BASE: "/api" });
 
-
-   useEffect(() => {
-    alarmSoundRef.current = new Audio("/assets/sfx/notification.mp3"); // 경로만 맞추세요
+  // 오디오 잠금 해제 & 재생 준비
+  useEffect(() => {
+    alarmSoundRef.current = new Audio("/assets/sfx/notification.mp3");
     alarmSoundRef.current.loop = false;
     alarmSoundRef.current.volume = 0.7;
 
     const unlock = async () => {
       try {
         if (!alarmSoundRef.current) return;
-        // 아주 짧게 재생 후 멈추면 브라우저가 오디오 사용을 허용 상태로 전환
         await alarmSoundRef.current.play();
         alarmSoundRef.current.pause();
         alarmSoundRef.current.currentTime = 0;
@@ -66,7 +125,6 @@ export const GameManager = () => {
           await alarmSoundRef.current.play();
         }
       } catch {
-        /* ignore */
       } finally {
         window.removeEventListener("pointerdown", unlock);
         window.removeEventListener("keydown", unlock);
@@ -76,11 +134,11 @@ export const GameManager = () => {
     window.addEventListener("keydown", unlock, { once: true });
   }, [pendingAlarmSound]);
 
+  // 페이지 진입 후 1.2s 뒤 폰 알람 → 폰 인트로 모달
   useEffect(() => {
     const t = setTimeout(() => {
       setAlarm(1);
       setPaused(true);
-      // 사운드 재생 시도 (막히면 pending 플래그)
       const tryPlay = async () => {
         try {
           await alarmSoundRef.current?.play();
@@ -110,15 +168,18 @@ export const GameManager = () => {
     fetchSession();
   }, [pendingAlarmSound]);
 
+  // endGame listen
   useEffect(() => {
-    const token = PubSub.subscribe(Topics.endGame, (_c, payload) => {
+    const token: string = PubSub.subscribe(Topics.endGame, (_c, payload) => {
       setEndResult(payload as ResultScreenProps);
     });
     return () => {
       PubSub.unsubscribe(token);
     };
-  }, []);
+  }, []); 
 
+
+  // PubSub로 외부에서 퀘스트 시작 요청이 올 수 있게 유지
   useEffect(() => {
     const subs = [
       PubSub.subscribe(Topics.startQuest1, () => {
@@ -138,91 +199,98 @@ export const GameManager = () => {
         setShowConfirm(true);
       }),
     ];
-
     return () => subs.forEach((s) => PubSub.unsubscribe(s));
   }, []);
-  
 
+  // ✅ Space 키로 퀘스트1 시작
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const spacePressed = e.code === "Space" || e.key === " ";
+      if (!spacePressed) return;
 
+      // 다른 모달/퀘스트 열려 있으면 무시
+      const modalOpen =
+        showPhoneIntro ||
+        showChatModal ||
+        showConfirm ||
+        showQuest1 ||
+        showQuest2 ||
+        showQuest3 ||
+        showQuest4;
 
-  // endGame 이벤트 수신
-  //PubSub.subscribe(Topics.endGame, (_channel, payload) => {
-    //setEndResult(payload as ResultScreenProps);
-  //});
+      if (modalOpen) return;
 
-  // 퀘스트 완료 시 경험치/진행 업데이트
+      e.preventDefault();
+      setPendingQuest(1);
+      setShowConfirm(true);
+      setPaused(true);
+      setSpaceHint(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showPhoneIntro, showChatModal, showConfirm, showQuest1, showQuest2, showQuest3, showQuest4]);
+
+  // 퀘스트 완료 시 EXP/진행
   const handleQuestComplete = () => {
-    setCurrentQuest((prev) => Math.min(prev + 1, 3));
+    setCurrentQuest((prev) => Math.min(prev + 1, 4));
     setExp((prev) => Math.min(prev + 2, 10));
   };
 
   return (
     <Box height="100vh" width="100vw">
-      {/* 로딩 화면 */}
       {!sessionId && (
         <Center>
           <Spinner size="xl" />
         </Center>
       )}
 
-      {/* 결과 화면 */}
       {endResult && <ResultScreen {...endResult} />}
 
-      {/* 게임 화면 */}
       {!endResult && sessionId && (
         <Box width="100vw" height="100vh" position="relative">
           {/* 상단 EXP 바 */}
-          <Box
-            position="absolute"
-            top="15px"
-            left="20px"
-            zIndex={10}
-          >
-            <Image
-              src={`/assets/sprites/storym_exp_${exp}.png`}
-              alt="exp-bar"
-              height="40px"
-            />
+          <Box position="absolute" top="15px" left="20px" zIndex={10}>
+            <Image src={`/assets/sprites/storym_exp_${exp}.png`} alt="exp-bar" height="40px" />
           </Box>
 
-
           {/* 상단 버튼 그룹 */}
-          <HStack
-            position="absolute"
-            top="15px"
-            right="20px"
-            spacing={3}
-            zIndex={10}
-          >
-            {/* 알림 */}
+          <HStack position="absolute" top="15px" right="20px" spacing={3} zIndex={10}>
+            {/* 알림(폰) */}
             <PhoneButton
               alarm={alarm}
-              highlight={alarm > 0 && !showMsg}
+              highlight={alarm > 0 && !showPhoneIntro}
               onClick={() => {
-                setShowMsg(true);
+                setShowPhoneIntro(true);
                 setAlarm(0);
-                setPaused(false);            
+                setPaused(true);
                 PubSub.publish(Topics.giveKeysToDom);
               }}
             />
 
             {/* 챗봇 */}
             <>
-            <Image
-              src="/assets/sprites/storym_chat.png"
-              alt="quest"
-              boxSize="60px"
-              cursor="pointer"
-              _hover={{ transform: "scale(1.06)" }}
-              onClick={() => setShowChatModal(true)}
-            />
-            <ChatModal isOpen={showChatModal} onClose={() => setShowChatModal(false)} />
+              <Image
+                src="/assets/sprites/storym_chat.png"
+                alt="chat"
+                boxSize="60px"
+                cursor="pointer"
+                _hover={{ transform: "scale(1.06)" }}
+                onClick={() => setShowChatModal(true)}
+              />
+              <ChatModal
+                isOpen={showChatModal}
+                onClose={() => {
+                  setShowChatModal(false);
+                  setPaused(false);
+                }}
+              />
             </>
-            {/* API */}
+
+            {/* 정책 TIP 아이콘(유지) */}
             <PolicyTipIcon
-              topicType="lclsf"         
-              topicName="취업"           
-              characterMeta={{ gender: "여성", region: "의왕", job: "대학생" }} // 선택
+              topicType="lclsf"
+              topicName="취업"
+              characterMeta={{ gender: "여성", region: "의왕", job: "대학생" }}
               boxSize="60px"
             />
 
@@ -236,36 +304,58 @@ export const GameManager = () => {
               onClick={() => setShowQuestModal(true)}
             />
 
-
-            {/* Settings */}
+            {/* 설정 */}
             <Image
               src="/assets/sprites/storym_settings.png"
               alt="settings"
               boxSize="60px"
               cursor="pointer"
               _hover={{ transform: "scale(1.06)" }}
-              // onClick 핸들러 필요하면 여기에 추가
             />
           </HStack>
-
 
           {/* 메인 게임 */}
           <Center width="100%" height="100%">
             <Game paused={paused} />
           </Center>
 
-          {/* 메시지 모달 */}
-          <MessageModal
-            isOpen={showMsg}
-            title="마을 이장님"
-            onComplete={() => {
-              setShowMsg(false);
-              setPendingQuest(1);
-              setShowConfirm(true);
+          {/* Space 힌트 배지 */}
+          {spaceHint && (
+            <Box
+              position="absolute"
+              bottom="36px"
+              left="50%"
+              transform="translateX(-50%)"
+              bg="blackAlpha.700"
+              color="white"
+              px={4}
+              py={2}
+              borderRadius="md"
+              border="1px solid #7E44A8"
+              zIndex={9}
+              fontFamily="NeoDGM"
+            >
+              Space 키를 눌러 퀘스트 1 시작!
+            </Box>
+          )}
+
+          {/* 폰 인트로 모달 */}
+          <PhoneIntroModal
+            isOpen={showPhoneIntro}
+            onOpenChat={() => {
+              setShowPhoneIntro(false);
+              setShowChatModal(true);
+            }}
+            onClose={() => {
+              setShowPhoneIntro(false);
+              setPaused(false);
+              setSpaceHint(true);
+              setTimeout(() => setSpaceHint(false), 5000);
+              PubSub.publish(Topics.giveKeysToGame);
             }}
           />
 
-          {/* 공통 퀘스트 시작 확인 모달 */}
+          {/* 퀘스트 시작 확인 모달 */}
           <ConfirmStartModal
             isOpen={showConfirm}
             title={`퀘스트 ${pendingQuest ?? currentQuest}`}
@@ -273,7 +363,7 @@ export const GameManager = () => {
             onYes={() => {
               setShowConfirm(false);
               requestAnimationFrame(() => {
-                setPaused(true);       
+                setPaused(true);
                 if (pendingQuest === 1) setShowQuest1(true);
                 if (pendingQuest === 2) {
                   PubSub.publish(Topics.giveKeysToDom);
@@ -288,9 +378,24 @@ export const GameManager = () => {
                   setShowQuest4(true);
                 }
                 setPendingQuest(null);
-            });
+              });
             }}
             onNo={() => setShowConfirm(false)}
+          />
+
+          <PhoneIntroModal
+            isOpen={showPhoneIntro}
+            onOpenChat={() => {
+              setShowPhoneIntro(false);
+              setShowChatModal(true);      // ChatModal 열기
+            }}
+            onClose={() => {
+              setShowPhoneIntro(false);
+              setPaused(false);
+              setSpaceHint(true);          // Space 힌트 잠깐 띄우는 로직 있으면 그대로 사용
+              setTimeout(() => setSpaceHint(false), 5000);
+              PubSub.publish(Topics.giveKeysToGame);
+            }}
           />
 
           {/* 퀘스트 상태창 */}
@@ -300,35 +405,34 @@ export const GameManager = () => {
             currentQuest={currentQuest}
           />
 
-          {/* Quest 1 */}
+          {/* 퀘스트 모달들 */}
           {showQuest1 && (
             <Quest1
-              isOpen={true}
+              isOpen
               onClose={() => {
                 setShowQuest1(false);
-                setPaused(false);  
+                setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest1(false);
                 PubSub.publish(Topics.giveKeysToGame);
-                setPaused(false);  
+                setPaused(false);
                 handleQuestComplete();
               }}
             />
           )}
-          {/* ⭐️ Quest 2 */}
           {showQuest2 && (
             <Quest2
               onClose={() => {
                 setShowQuest2(false);
-                setPaused(false);  
+                setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest2(false);
-                setPaused(false);  
-                PubSub.publish(Topics.giveKeysToGame); 
+                setPaused(false);
+                PubSub.publish(Topics.giveKeysToGame);
                 handleQuestComplete();
               }}
             />
@@ -337,12 +441,12 @@ export const GameManager = () => {
             <Quest3
               onClose={() => {
                 setShowQuest3(false);
-                setPaused(false);  
+                setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest3(false);
-                setPaused(false);  
+                setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
                 handleQuestComplete();
               }}
@@ -352,19 +456,18 @@ export const GameManager = () => {
             <Quest4
               onClose={() => {
                 setShowQuest4(false);
-                setPaused(false);  
+                setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest4(false);
-                setPaused(false);  
+                setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
                 handleQuestComplete();
               }}
             />
           )}
 
-        
           <RateLimitModal />
         </Box>
       )}

@@ -27,7 +27,6 @@ export default function PhoneButton({
   alarm,
   highlight = false,
   onClick,
-  // label = "Alarm",  // 라벨 사용 안 함
   iconSrc = "/assets/sprites/storym_phone.png",
   rightAdornment,
 }: PhoneButtonProps) {
@@ -39,7 +38,6 @@ export default function PhoneButton({
         display="inline-flex"
         alignItems="center"
         justifyContent="center"
-        // ⬇️ 하얀 박스 관련 스타일 제거
         bg="transparent"
         border="none"
         borderRadius="0"
