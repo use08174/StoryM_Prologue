@@ -17,7 +17,6 @@ type Props = {
   onClose: () => void;     // 메인으로 (Space 힌트 띄우기 등은 상위에서 처리)
   onOpenChat: () => void;  // 챗봇 바로 열기
 };
-
 const C = { primary: "#7E44A8", accent: "#FCCFDB" };
 
 export default function PhoneIntroModal({ isOpen, onClose, onOpenChat }: Props) {
@@ -37,7 +36,7 @@ export default function PhoneIntroModal({ isOpen, onClose, onOpenChat }: Props) 
             <HStack spacing={3}>
               <Image src="/assets/sprites/storym_chat.png" alt="chat" boxSize="42px" />
               <Text fontSize="md" lineHeight="1.6">
-                상단의 <b style={{ color: C.accent }}>챗봇 아이콘</b>을 클릭하면
+                상단의 <b style={{ color: C.accent }}> <Image src="/assets/sprites/storym_chat.png" alt="chat" boxSize="10px" /> 챗봇 아이콘</b>을 클릭하면
                 언제든지 챗봇을 열어서 궁금한 부분을 질문할 수 있어.<br />뉴스 아이콘을 누르면 서류 확인, 계약 팁, 정책 추천을 실시간으로 도와줄게!
               </Text>
             </HStack>

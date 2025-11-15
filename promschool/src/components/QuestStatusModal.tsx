@@ -57,16 +57,17 @@ export default function QuestStatusModal({
       <ModalContent bg={C.panel} color={C.accent} {...pixelBorder(C.primary, C.mid)} maxW="720px">
         {/* 상단 픽셀 바 */}
         <Box h="28px" bg={C.primary} />
-        <ModalCloseButton
-          bg={C.accent}
-          color={C.primary}
-          _hover={{ bg: C.accent }}
-          {...pixelBorder(C.primary, C.primary)}
-          top="8px"
-          right="8px"
-        />
+         <ModalCloseButton
+            sx={pixelBorder(C.accent, C.primary)}
+            bg={C.accent}
+            color={C.primary}
+            _hover={{ bg: C.accent }}
+            top="8px"
+            right="8px"
+          />
+        
         <ModalHeader pt="10px" pb="0" fontFamily="NeoDGM" letterSpacing="0.5px">
-          📜 퀘스트 진행 현황
+          퀘스트 진행 현황
         </ModalHeader>
 
         <ModalBody pt="14px" pb="16px">
