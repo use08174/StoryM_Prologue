@@ -55,17 +55,28 @@ function PhoneIntroModal({
         <ModalBody>
           <VStack align="stretch" spacing={4}>
             <Text fontFamily="NeoDGM" textAlign="center">
-              첫 독립을 축하해!<br/>  <br/>{" "}
-              <b style={{ color: "#FCCFDB" }}>챗봇 아이콘</b>을 누르면
-              언제든지 챗봇에게 질문할 수 있어. <br/> <b style={{ color: "#FCCFDB" }}>뉴스 아이콘</b>을 누르면 서류 확인, 계약 팁을 확인할 수 있어.
-              <b style={{ color: "#FCCFDB" }}>종이 아이콘</b>을 누르면 퀘스트 진행현황을 확인할 수 있어.
+              첫 독립을 축하해!<br/> <br/>
+              <Box as="span" display="inline-flex" alignItems="center" gap={1} mr={2}>
+                <Image src="/assets/sprites/storym_chat.png" alt="chat" boxSize="35px" display="inline" />
+                <b style={{ color: "#FCCFDB" }}>버튼을 누르면 언제든지 챗봇에게 질문할 수 있어. </b>
+              </Box>
+              <br/>
+              <Box as="span" display="inline-flex" alignItems="center" gap={1} mr={2}>
+                <Image src="/assets/sprites/storym_tip.png" alt="news" boxSize="35px" display="inline" />
+                <b style={{ color: "#FCCFDB" }}>버튼을 누르면 서류 확인, 계약 팁을 확인할 수 있어. </b>
+              </Box>
+              <Box as="span" display="inline-flex" alignItems="center" gap={1} mr={2}>
+                <Image src="/assets/sprites/storym_scenario.png" alt="paper" boxSize="35px" display="inline" />
+                <b style={{ color: "#FCCFDB" }}>버튼을 누르면 퀘스트 진행현황을 확인할 수 있어.</b>
+              </Box>
+    
             </Text>
             <Text fontFamily="NeoDGM" textAlign="center">자, 이제 퀘스트 1을 시작해 볼까? <br/></Text>
-            <HStack justify="flex-end" spacing={3}>
-              <Button onClick={onOpenChat} colorScheme="purple" variant="solid">
+            <HStack justify="flex-end" spacing={10}>
+              <Button onClick={onOpenChat} colorScheme="purple" variant="solid" fontFamily="NeoDGM">
                 챗봇 바로 열기
               </Button>
-              <Button onClick={onClose} colorScheme="teal" variant="outline">
+              <Button onClick={onClose} colorScheme="purple" variant="outline" fontFamily="NeoDGM">
                 메인으로 (Space로 시작)
               </Button>
             </HStack>
@@ -80,32 +91,22 @@ export const GameManager = () => {
   const [sessionId, setSessionId] = useState<string>();
   const [endResult, setEndResult] = useState<ResultScreenProps>();
   const [exp, setExp] = useState(0);
-
   const [alarm, setAlarm] = useState(0);
   const [paused, setPaused] = useState(false);
-
-  // 🔔 폰 인트로 & 챗봇
   const [showPhoneIntro, setShowPhoneIntro] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
-
-  // 퀘스트 모달들
   const [showQuest1, setShowQuest1] = useState(false);
   const [showQuest2, setShowQuest2] = useState(false);
   const [showQuest3, setShowQuest3] = useState(false);
   const [showQuest4, setShowQuest4] = useState(false);
-
   const [showConfirm, setShowConfirm] = useState(false);
   const [showQuestModal, setShowQuestModal] = useState(false);
-
   const [currentQuest, setCurrentQuest] = useState(1);
   const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 | 4 | null>(null);
-
   const [spaceHint, setSpaceHint] = useState(false); // Space 안내 뱃지
   const toast = useToast();
-
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
   const [pendingAlarmSound, setPendingAlarmSound] = useState(false);
-
   const eastworldClient = new EastworldClient({ BASE: "/api" });
 
   // 오디오 잠금 해제 & 재생 준비
@@ -202,7 +203,6 @@ export const GameManager = () => {
     return () => subs.forEach((s) => PubSub.unsubscribe(s));
   }, []);
 
-  // ✅ Space 키로 퀘스트1 시작
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const spacePressed = e.code === "Space" || e.key === " ";

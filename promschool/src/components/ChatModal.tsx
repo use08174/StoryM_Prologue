@@ -28,23 +28,36 @@ type Props = {
   onClose: () => void;
 };
 
-/** 환경변수 안전 로더 (Vite / Next / CRA 모두 지원) */
+/** ───────── 스타일 팔레트 & 픽셀 보더 유틸 (디자인만 추가) ───────── */
+const C = {
+  primary: "#7E44A8",
+  accent: "#FCCFDB",
+  mid: "#A372C2",
+  dark: "#121318",
+  panel: "#1A1B22",
+};
+const pixelBorder = (outer = C.primary, inner = C.mid) => ({
+  border: "0",
+  boxShadow: `
+    0 0 0 2px ${outer},
+    0 0 0 4px ${inner},
+    inset 0 0 0 2px ${inner}
+  `,
+  borderRadius: "0",
+});
+
 const getApiBase = () => {
-  // Vite
   try {
     if (typeof import.meta !== "undefined" && (import.meta as any)?.env?.VITE_API_BASE_URL) {
       return (import.meta as any).env.VITE_API_BASE_URL as string;
     }
   } catch {}
-  // Next.js
   if (typeof process !== "undefined" && (process as any)?.env?.NEXT_PUBLIC_API_BASE) {
     return (process as any).env.NEXT_PUBLIC_API_BASE as string;
   }
-  // CRA
   if (typeof process !== "undefined" && (process as any)?.env?.REACT_APP_API_BASE_URL) {
     return (process as any).env.REACT_APP_API_BASE_URL as string;
   }
-  // Fallback
   return "http://localhost:8000";
 };
 
@@ -76,18 +89,14 @@ export default function ChatModal({ isOpen, onClose }: Props) {
     const text = input.trim();
     if (!text) return;
 
-    // 사용자 메시지 추가
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
 
-    // 스트림 제어
     controllerRef.current = new AbortController();
 
     try {
       const API_BASE_URL = getApiBase();
-      // console.log("[Chat] API_BASE_URL =>", API_BASE_URL);
-
       const res = await fetch(`${API_BASE_URL}/llm/chat/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,24 +108,18 @@ export default function ChatModal({ isOpen, onClose }: Props) {
         signal: controllerRef.current.signal,
       });
 
-      if (!res.ok || !res.body) {
-        throw new Error(`No response stream (status ${res.status})`);
-      }
+      if (!res.ok || !res.body) throw new Error(`No response stream (status ${res.status})`);
 
-      // AI 버블(버디) 미리 추가
       let aiText = "";
       setMessages((m) => [...m, { role: "buddy", content: "" }]);
 
-      // 서버가 text/plain 스트림을 주므로 chunk를 그대로 이어붙인다
       const reader = res.body.getReader();
       const decoder = new TextDecoder("utf-8");
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        aiText += chunk;
+        aiText += decoder.decode(value, { stream: true });
 
         setMessages((m) => {
           const updated = [...m];
@@ -148,15 +151,8 @@ export default function ChatModal({ isOpen, onClose }: Props) {
     const isUser = msg.role === "user";
     const isBuddy = msg.role === "buddy";
     const isAgent = msg.role === "agent";
-
-    const bubbleColor = isUser
-      ? "teal.600"
-      : isBuddy
-      ? "#7E44A8" // 버디(보라)
-      : isAgent
-      ? "orange.600"
-      : "gray.600";
-
+    const bubbleBg = isUser ? C.primary : C.dark;
+    const borderOuter = isUser ? C.primary : "#3b2c49";
     const name = isUser ? "나" : isBuddy ? "버디" : isAgent ? "중개인" : "AI";
     const avatar = isUser
       ? "/assets/avatars/player.png"
@@ -169,88 +165,123 @@ export default function ChatModal({ isOpen, onClose }: Props) {
         key={idx}
         align="flex-start"
         justify={isUser ? "flex-end" : "flex-start"}
-        spacing={2}
-        mb={2}
+        spacing={3}
+        mb={3}
       >
-        {!isUser && <Image src={avatar} w="36px" h="36px" borderRadius="md" alt={name} />}
+        {!isUser && (
+          <Image
+            src={avatar}
+            w="36px"
+            h="36px"
+            alt={name}
+          />
+        )}
         <Box maxW="72%">
           {!isUser && (
-            <Text fontSize="xs" color="gray.300" mb={1} fontFamily="NeoDGM">
+            <Text fontSize="xs" color="#CFCFD6" mb={1} fontFamily="NeoDGM">
               {name}
             </Text>
           )}
-          <Text
-            bg={bubbleColor}
+          <Box
+            bg={bubbleBg}
+            color="white"
             px={3}
             py={2}
-            borderRadius="xl"
-            color="white"
-            whiteSpace="pre-wrap"
             fontFamily="NeoDGM, sans-serif"
-            boxShadow="0 2px 4px rgba(0,0,0,0.25)"
+            whiteSpace="pre-wrap"
+            {...pixelBorder(borderOuter, C.mid)}
           >
             {msg.content}
-          </Text>
+          </Box>
         </Box>
-        {isUser && <Image src={avatar} w="36px" h="36px" borderRadius="md" alt={name} />}
+        {isUser && (
+          <Image
+            src={avatar}
+            w="36px"
+            h="36px"
+            alt={name}
+          />
+        )}
       </HStack>
     );
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
-      <ModalOverlay bg="rgba(0,0,0,0.7)" />
-      <ModalContent bg="#1a1b22" color="white" border="2px solid #7E44A8" borderRadius="xl" p={3}>
-        <ModalHeader fontFamily="NeoDGM">StoryM 대화창</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
-            {/* 대화 영역 */}
+      <ModalOverlay bg="blackAlpha.700" />
+      <ModalContent bg={C.panel} color={C.accent} maxW="760px" {...pixelBorder(C.primary, C.mid)}>
+        {/* 상단 픽셀 바 */}
+        <Box h="28px" bg={C.primary} />
+
+         <ModalCloseButton
+          sx={pixelBorder(C.accent, C.primary)}
+          bg={C.accent}
+          color={C.primary}
+          _hover={{ bg: C.accent }}
+          top="8px"
+          right="8px"
+        />
+        
+
+        <ModalHeader pt="10px" pb="0" fontFamily="NeoDGM" letterSpacing="0.5px">
+          StoryM 챗봇
+        </ModalHeader>
+
+        <ModalBody pt="14px" pb="16px">
+          <VStack spacing={3} align="stretch">
+            {/* 대화 영역 카드 */}
             <Box
               ref={scrollRef}
               h="420px"
               overflowY="auto"
-              p={3}
-              bg="#121318"
-              borderRadius="lg"
-              border="1px solid rgba(255,255,255,0.1)"
+              p="12px"
+              bg={C.dark}
+              {...pixelBorder(C.primary, C.mid)}
               sx={{
-                "&::-webkit-scrollbar": { width: "6px" },
-                "&::-webkit-scrollbar-thumb": { background: "#7E44A8", borderRadius: "3px" },
+                "&::-webkit-scrollbar": { width: "8px" },
+                "&::-webkit-scrollbar-thumb": { background: C.primary },
               }}
             >
               {messages.map(renderMessage)}
               {loading && (
-                <HStack mt={2}>
-                  <Spinner size="sm" color="#FCCFDB" />
-                  <Text fontSize="sm" color="gray.400">
-                    응답 생성 중...
-                  </Text>
+                <HStack mt={2} color="#CFCFD6">
+                  <Spinner size="sm" color={C.accent} />
+                  <Text fontSize="sm">응답 생성 중...</Text>
                 </HStack>
               )}
             </Box>
 
-            {/* 입력 */}
-            <HStack>
+            {/* 입력 영역 카드 */}
+            <HStack
+              bg={C.dark}
+              p="10px"
+              spacing={3}
+              align="stretch"
+              {...pixelBorder(C.primary, C.mid)}
+            >
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onEnterSend}
-                placeholder="메시지를 입력하세요..."
-                bg="#1a1b22"
-                border="1px solid #7E44A8"
+                placeholder="메시지를 입력하세요… (Enter 전송, Shift+Enter 줄바꿈)"
+                bg={C.panel}
+                color="white"
+                border="0"
+                rows={2}
                 resize="none"
-                rows={1}
                 fontFamily="NeoDGM"
+                _focus={{ outline: "none" }}
                 isDisabled={loading}
               />
               <Button
                 onClick={sendMessage}
-                colorScheme="purple"
                 isLoading={loading}
+                bg={C.accent}
+                color={C.primary}
+                _hover={{ bg: C.accent }}
                 px={6}
-                borderRadius="md"
                 fontFamily="NeoDGM"
+                {...pixelBorder(C.primary, C.primary)}
               >
                 전송
               </Button>
