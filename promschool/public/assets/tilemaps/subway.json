@@ -242,14 +242,27 @@
                  "width":0,
                  "x":629.147976093814,
                  "y":685.483514581975
+                },
+              {
+                 "height":0,
+                 "id":21,
+                 "name":"to_main_map",
+                 "point":true,
+                 "rotation":0,
+                 "type":"to_main_map",
+                 "visible":true,
+                 "width":0,
+                 "x":702.663786897048,
+                 "y":565.874730021598
                 }],
                 "opacity":1,
          "type":"objectgroup",
          "visible":true,
          "x":0,
          "y":0
-        },  
-        {"draworder":"topdown",
+        }, 
+         {
+         "draworder":"topdown",
          "id":7,
          "name":"block",
          "objects":[
@@ -412,9 +425,9 @@
          "visible":true,
          "x":0,
          "y":0
-        }],    
+        }],
  "nextlayerid":4,
- "nextobjectid":21,
+ "nextobjectid":22,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -423,7 +436,7 @@
         {
          "columns":32,
          "firstgid":1,
-         "image":"Subway_and_Train_Station.png",
+         "image":"../tilesets/Subway_and_Train_Station.png",
          "imageheight":2960,
          "imagewidth":512,
          "margin":0,
@@ -432,8 +445,7 @@
          "tilecount":5920,
          "tileheight":16,
          "tilewidth":16
-        }
-        ],
+        }],
  "tilewidth":16,
  "type":"map",
  "version":"1.10",

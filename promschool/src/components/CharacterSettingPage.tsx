@@ -38,7 +38,7 @@ const IMG = {
   ICON_MALE: `${PUB}assets/ui/icon_male.png`,
   ICON_FEMALE: `${PUB}assets/ui/icon_female.png`,
   AVATAR_FRAME: `${PUB}assets/ui/icon_profile.png`,    // 프레임용 이미지를 쓰고 싶으면 교체
-  CHAR_MALE: `${PUB}assets/ui/icon_profile.png`,
+  CHAR_MALE: `${PUB}assets/sprites/main_boy_profile.png`,
   CHAR_FEMALE: `${PUB}assets/sprites/main_girl_profile.png`,
   BTN_DEF: `${PUB}assets/ui/btn_default.png`,
   INP: `${PUB}assets/ui/input_bg.png`, // 인풋 스킨
@@ -145,6 +145,8 @@ export default function Setting() {
   const [gender, setGender] = useState<"male" | "female">("male");
   const [region, setRegion] = useState("");
   const [job, setJob] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // 🔹 추가
+
 
   // 카드 원본 비율 계산
   const [ratio, setRatio] = useState(BASE_W / BASE_H);
@@ -154,10 +156,57 @@ export default function Setting() {
     img.onload = () => setRatio(img.naturalWidth / img.naturalHeight);
   }, []);
 
-  const onSubmit = () => {
-    console.log({ name, gender, region, job });
-    nav("/prologue");
+    const onSubmit = async () => {
+    if (!(name.trim() && region.trim() && job.trim())) return; // 방어 코드
+
+    setIsSubmitting(true);
+
+    try {
+      // ✅ 백엔드 주소(base url)는 프로젝트에 맞게 수정
+      // 예: const API_BASE = import.meta.env.VITE_API_BASE_URL;
+      const res = await fetch("/character", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Authorization: `Bearer ${accessToken}`,  // 토큰 쓰면 여기
+        },
+        body: JSON.stringify({
+          gender, // "male" | "female" 문자열 그대로 전송
+          region,
+          job,
+          // name은 현재 스펙에는 없어서 안 보내는 상태.
+          // 필요하면 백엔드에 name 필드 추가 요청해야 함.
+        }),
+      });
+
+      if (!res.ok) {
+        const msg = await res.text();
+        console.error("캐릭터 생성 실패:", msg);
+        alert("캐릭터를 저장하는 중 오류가 발생했어요.");
+        return;
+      }
+
+      const data = await res.json();
+      console.log("캐릭터 생성 성공:", data);
+
+      // ✅ DB에 저장된 캐릭터 id를 브라우저에 기억
+      if (data.character_id) {
+        localStorage.setItem("characterId", String(data.character_id));
+      }
+
+      // (선택) 프론트에서 알고 있는 gender도 같이 저장해두면 백업용으로 쓸 수 있음
+      localStorage.setItem("playerGender", gender);
+
+      nav("/prologue");
+      
+    } catch (err) {
+      console.error("요청 중 에러:", err);
+      alert("서버와 통신하는 중 문제가 발생했어요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   const charSrc = useMemo(
     () => (gender === "male" ? IMG.CHAR_MALE : IMG.CHAR_FEMALE),
@@ -453,7 +502,7 @@ export default function Setting() {
             </Overlay>
 
             {/* CTA 버튼 */}
-            <Overlay {...PX.cta}>
+                        <Overlay {...PX.cta}>
               <Tooltip
                 isDisabled={isComplete}   // 완료되면 툴팁 비활성
                 label={tip}
@@ -462,12 +511,11 @@ export default function Setting() {
                 openDelay={200}
               >
                 {(() => {
-                  const disabled = !isComplete;
+                  const disabled = !isComplete || isSubmitting; // 🔹 로딩 중에도 비활성
 
                   const handleClick = () => {
                     if (disabled) return;
-                    console.log({ name, gender, region, job });
-                    nav("/prologue");
+                    onSubmit(); // 🔹 이제 DB에 POST
                   };
 
                   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -488,7 +536,7 @@ export default function Setting() {
                       onKeyDown={handleKeyDown}
                       w="100%"
                       h="100%"
-                      bgImage={`url('${IMG.BTN_DEF}')`}  // 단일 이미지 스킨
+                      bgImage={`url('${IMG.BTN_DEF}')`}
                       bgRepeat="no-repeat"
                       bgSize="contain"
                       bgPosition="center"
@@ -499,11 +547,15 @@ export default function Setting() {
                           : undefined
                       }
                       userSelect="none"
-                    />
+                    >
+                      {/* 버튼 안에 텍스트 넣고 싶으면 여기에 넣기 */}
+                      {isSubmitting ? "" : ""}
+                    </Box>
                   );
                 })()}
               </Tooltip>
             </Overlay>
+
 
             {/* 날짜 */}
             <Overlay

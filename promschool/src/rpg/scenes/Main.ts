@@ -9,7 +9,6 @@ import { Evidence } from "rpg/sprites/Evidence";
 import { getGameState } from "rpg/data/persistence";
 import PubSub from "pubsub-js";
 
-
 type TilesetDef = { name: string; image: string; extruded?: boolean };
 
 type MapConfig = {
@@ -51,15 +50,23 @@ const MAPS: Record<string, MapConfig> = {
     objectCollisionLayers: ["block"],
   },
   [key.tilemap.subway]: {
-      objectGroups: ["object"],
-      spawnName: "main_character",
-      portalNameList: ["to_main_map"],   // JSON과 동일
-      tileCollision: {
-        layerNames: [],                  // 존재하지 않는 "Collision" 제거
-        collidesProp: "collides",
-      },
-      objectCollisionLayers: ["block"],  // JSON에 맞춤
-    }
+    objectGroups: ["object"],
+    spawnName: "main_character",
+    portalNameList: ["to_main_map"],   // JSON과 동일
+    tileCollision: {
+      layerNames: [],                  // 존재하지 않는 "Collision" 제거
+      collidesProp: "collides",
+    },
+    objectCollisionLayers: ["block"],  // JSON에 맞춤
+  },
+};
+
+// 🔹 Boot 씬에서 넘겨줄 때 쓸 데이터 타입
+type MainSceneData = {
+  mapKey?: string;
+  spawnName?: string;
+  gender?: "male" | "female";
+  characterId?: string | number;
 };
 
 export default class Main extends Phaser.Scene {
@@ -75,14 +82,35 @@ export default class Main extends Phaser.Scene {
   private activeQuestZone: number | null = null;
   private questStarted: boolean = false;
 
-
-
+  // 🔹 현재 플레이어 성별 (기본 female)
+  private gender: "male" | "female" = "female";
 
   constructor() {
     super(key.scene.main);
   }
 
-  create(data: { mapKey?: string; spawnName?: string } = {}) {
+  // 🔹 Boot 씬에서 넘어온 gender / localStorage에서 성별을 결정
+  init(data: MainSceneData) {
+    // 1순위: 씬 데이터로 넘어온 gender
+    if (data.gender === "male" || data.gender === "female") {
+      this.gender = data.gender;
+      return;
+    }
+
+    // 2순위: localStorage에 저장된 값 (React Setting에서 저장해 둔 경우)
+    try {
+      const saved = window.localStorage?.getItem("playerGender");
+      if (saved === "male" || saved === "female") {
+        this.gender = saved;
+      } else {
+        this.gender = "female";
+      }
+    } catch {
+      this.gender = "female";
+    }
+  }
+
+  create(data: MainSceneData = {}) {
     const startMapKey = data.mapKey ?? key.tilemap.subway;
     const cfg = MAPS[startMapKey];
     if (!cfg) throw new Error(`MAPS config missing for mapKey=${startMapKey}`);
@@ -98,7 +126,8 @@ export default class Main extends Phaser.Scene {
     }
     if (!spawnPoint) throw new Error(`Spawn object "${spawnName}" not found`);
 
-    this.player = new Player(this, spawnPoint.x!, spawnPoint.y!);
+    // 🔹 gender를 Player에 넘겨서 남/여 캐릭터 스프라이트 결정
+    this.player = new Player(this, spawnPoint.x!, spawnPoint.y!, this.gender);
 
     // 충돌 연결
     for (const tl of collisionTileLayers) {
@@ -114,7 +143,7 @@ export default class Main extends Phaser.Scene {
     this.renderDebug();
 
     // ===============================
-    // 여기서부터 Quest 관련 추가 (Quest1~3)
+    // 여기서부터 Quest 관련 추가 (Quest1~4)
 
     this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     const createQuestZone = (
@@ -127,19 +156,20 @@ export default class Main extends Phaser.Scene {
       this.physics.add.existing(zone, true);
 
       const text = this.add.text(x, y, label, {
-        fontSize: '13px',
-        color: '#ffffff',
-        backgroundColor: 'rgba(0,0,0,0.7)',
+        fontSize: "13px",
+        color: "#ffffff",
+        backgroundColor: "rgba(0,0,0,0.7)",
         padding: { left: 10, right: 10, top: 6, bottom: 6 },
-        align: 'center',
+        align: "center",
         resolution: 2, // ⬅️ 효과 큼 (1~3 시도)
       }).setOrigin(0.5).setDepth(2000).setScrollFactor(1);
 
-
       // 디버그 박스
-      /*this.add.graphics()
+      /*
+      this.add.graphics()
         .lineStyle(2, 0xff0000)
-        .strokeRectShape(zone.getBounds());*/
+        .strokeRectShape(zone.getBounds());
+      */
 
       // 살짝 깜빡이는 효과 (선택사항)
       this.tweens.add({
@@ -152,6 +182,7 @@ export default class Main extends Phaser.Scene {
 
       return { zone, text, questId };
     };
+
     this.quest1 = createQuestZone(
       650,
       708,
@@ -165,17 +196,18 @@ export default class Main extends Phaser.Scene {
       2
     );
     this.quest3 = createQuestZone(
-       150,
+      150,
       -82,
       "🏢 이곳은 퀘스트 3 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
       3
     );
     this.quest4 = createQuestZone(
-       -730,
+      -730,
       -152,
       "🏢 이곳은 주민센터입니다.\n[SPACE]를 눌러 전입신고를 시작하세요.",
       4
     );
+
     this.activeQuestZone = null;
     this.questStarted = false;
 
@@ -184,12 +216,7 @@ export default class Main extends Phaser.Scene {
         if (!this.questStarted) this.activeQuestZone = questId;
       });
     });
-
-
-
-    
   }
-
 
   private createMap(mapKey: string): {
     map: Phaser.Tilemaps.Tilemap;
@@ -231,10 +258,10 @@ export default class Main extends Phaser.Scene {
 
     const layersArr = Object.values(createdTileLayers);
     if (layersArr.length > 0) {
-      const minX = Math.min(...layersArr.map(l => l.x));
-      const minY = Math.min(...layersArr.map(l => l.y));
-      const maxX = Math.max(...layersArr.map(l => l.x + l.width));
-      const maxY = Math.max(...layersArr.map(l => l.y + l.height));
+      const minX = Math.min(...layersArr.map((l) => l.x));
+      const minY = Math.min(...layersArr.map((l) => l.y));
+      const maxX = Math.max(...layersArr.map((l) => l.x + l.width));
+      const maxY = Math.max(...layersArr.map((l) => l.y + l.height));
 
       const worldW = maxX - minX;
       const worldH = maxY - minY;
@@ -265,7 +292,6 @@ export default class Main extends Phaser.Scene {
       }
     } else {
       // 전체 타일 레이어 스캔
-      // 전체 타일 레이어 스캔 (tl.layer 접근하지 않음)
       for (const [name, tl] of Object.entries(createdTileLayers)) {
         if (!tl) continue;
 
@@ -290,7 +316,6 @@ export default class Main extends Phaser.Scene {
           // tile.collides는 setCollisionBy* 이후 설정됨. properties도 함께 확인.
           if (tile.collides || (tile.properties as any)?.[collidesProp]) {
             hasColliders = true;
-            // forEachTile은 조기 종료가 없으므로 플래그만 세움
           }
         });
 
@@ -313,7 +338,7 @@ export default class Main extends Phaser.Scene {
           .create(
             obj.x! + (obj.width || 0) / 2,
             obj.y! + (obj.height || 0) / 2,
-            undefined,
+            undefined
           )
           .setSize(obj.width || 0, obj.height || 0)
           .setVisible(false)
@@ -322,21 +347,18 @@ export default class Main extends Phaser.Scene {
       });
     }
 
-    // // 월드/카메라 바운드
-    // this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    // this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-
     return { map, collisionGroup, collisionTileLayers };
   }
 
   private createInteractables(
     map: Phaser.Tilemaps.Tilemap,
     collisionGroup: Phaser.Physics.Arcade.StaticGroup,
-    cfg: MapConfig,
+    cfg: MapConfig
   ) {
     // NPC / 증거물 (필요 시 복구)
     for (const [characterName, characterDef] of Object.entries(characters)) {
-      if (characterName === "main_girl") continue;
+      // 🔹 플레이어용 캐릭터는 NPC로 만들지 않기
+      if (characterName === "main_girl" || characterName === "main_boy") continue;
       if (getGameState().goneNpcs.has(characterName)) continue;
 
       // objectGroups를 돌며 이름으로 위치 찾기
@@ -370,9 +392,13 @@ export default class Main extends Phaser.Scene {
         const name = obj.name ?? "";
         const props: any[] = (obj as any).properties ?? [];
 
-        const byList   = cfg.portalNameList?.includes(name);
+        const byList = cfg.portalNameList?.includes(name);
         const byPrefix = cfg.portalNamePrefix && name.startsWith(cfg.portalNamePrefix);
-        const byFlag   = cfg.portalFlagProperty && !!props.find((p: any) => p.name === cfg.portalFlagProperty && p.value);
+        const byFlag =
+          cfg.portalFlagProperty &&
+          !!props.find(
+            (p: any) => p.name === cfg.portalFlagProperty && p.value
+          );
 
         if (byList || byPrefix || byFlag) {
           portals.push({ obj, props });
@@ -401,7 +427,7 @@ export default class Main extends Phaser.Scene {
             obj.x! + (obj.width! / 2),
             obj.y! + (obj.height! / 2),
             obj.width!,
-            obj.height!,
+            obj.height!
           )
           .setOrigin(0.5);
       }
@@ -423,8 +449,13 @@ export default class Main extends Phaser.Scene {
     this.cameras.main.once(
       Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE,
       () => {
-        this.scene.restart({ mapKey: targetMapKey, spawnName });
-      },
+        // 🔹 맵 이동 후에도 같은 성별 유지
+        this.scene.restart({
+          mapKey: targetMapKey,
+          spawnName,
+          gender: this.gender,
+        });
+      }
     );
   }
 
@@ -453,8 +484,8 @@ export default class Main extends Phaser.Scene {
           console.warn("[Phaser] enableGlobalCapture skipped:", error);
         }
       }
-  });
-}
+    });
+  }
 
   private renderDebug() {
     if (isProduction) return;
@@ -490,6 +521,4 @@ export default class Main extends Phaser.Scene {
       }
     }
   }
-
-
 }
