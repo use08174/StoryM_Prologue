@@ -5,6 +5,7 @@ import Landing from "components/Landing";
 import ProloguePage from "components/ProloguePage"; // <-- 1. ProloguePage를 불러옵니다.
 import CharacterSettingPage from "./CharacterSettingPage";
 import { Auth } from "./Auth";
+import CreditPage from "./CreditPage";
 
 const RedirectToHome = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const AppRoutes = () => {
       <Route path="/profile" element={<CharacterSettingPage />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/game" element={<GameManager />} />
+      <Route path="/credit" element={<CreditPage />} />
       <Route path="*" element={<RedirectToHome />} />
     </Routes>
   );
