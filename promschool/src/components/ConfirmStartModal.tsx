@@ -173,7 +173,7 @@ export default function ConfirmStartModal({
         content: '""',
         position: "absolute",
         inset: 0,
-        backgroundImage: "url('/assets/background/quest1_back.png')",
+        backgroundImage: "url('/assets/background/quest_back.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",

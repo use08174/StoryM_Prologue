@@ -101,7 +101,8 @@ export const GameManager = () => {
   const [showQuest4, setShowQuest4] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showQuestModal, setShowQuestModal] = useState(false);
-  const [currentQuest, setCurrentQuest] = useState(1);
+  const [currentQuest, setCurrentQuest] = useState<1 | 2 | 3 | 4>(1);
+  const [isQuestOpen, setIsQuestOpen] = useState(false);
   const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 | 4 | null>(null);
   const [spaceHint, setSpaceHint] = useState(false); // Space 안내 뱃지
   const toast = useToast();
@@ -216,25 +217,25 @@ export const GameManager = () => {
         showQuest1 ||
         showQuest2 ||
         showQuest3 ||
-        showQuest4;
+        showQuest4 ||
+        isQuestOpen;
 
       if (modalOpen) return;
 
       e.preventDefault();
-      setPendingQuest(1);
+      setPendingQuest(currentQuest);
       setShowConfirm(true);
       setPaused(true);
       setSpaceHint(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showPhoneIntro, showChatModal, showConfirm, showQuest1, showQuest2, showQuest3, showQuest4]);
+  }, [showPhoneIntro, showChatModal, showConfirm, showQuest1, showQuest2, showQuest3, showQuest4, isQuestOpen,currentQuest]);
 
   // 퀘스트 완료 시 EXP/진행
   const handleQuestComplete = () => {
-    setCurrentQuest((prev) => Math.min(prev + 1, 4));
-    setExp((prev) => Math.min(prev + 2, 10));
-  };
+  setCurrentQuest(prev => (prev === 1 ? 2 : prev === 2 ? 3 : prev === 3 ? 4 : 4));
+};
 
   return (
     <Box height="100vh" width="100vw">
@@ -364,16 +365,22 @@ export const GameManager = () => {
               setShowConfirm(false);
               requestAnimationFrame(() => {
                 setPaused(true);
-                if (pendingQuest === 1) setShowQuest1(true);
-                if (pendingQuest === 2) {
+                setIsQuestOpen(true);  
+                const q = pendingQuest ?? currentQuest; 
+
+                 if (q === 1) {
+                  PubSub.publish(Topics.giveKeysToDom);    // 통일감 있게 DOM으로 넘김
+                  setShowQuest1(true);
+                }
+                if (q === 2) {
                   PubSub.publish(Topics.giveKeysToDom);
                   setShowQuest2(true);
                 }
-                if (pendingQuest === 3) {
+                if (q === 3) {
                   PubSub.publish(Topics.giveKeysToDom);
                   setShowQuest3(true);
                 }
-                if (pendingQuest === 4) {
+                if (q === 4) {
                   PubSub.publish(Topics.giveKeysToDom);
                   setShowQuest4(true);
                 }
@@ -382,6 +389,7 @@ export const GameManager = () => {
             }}
             onNo={() => setShowConfirm(false)}
           />
+
 
           <PhoneIntroModal
             isOpen={showPhoneIntro}
@@ -411,6 +419,7 @@ export const GameManager = () => {
               isOpen
               onClose={() => {
                 setShowQuest1(false);
+                setIsQuestOpen(false);
                 setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
               }}
@@ -426,11 +435,13 @@ export const GameManager = () => {
             <Quest2
               onClose={() => {
                 setShowQuest2(false);
+                setIsQuestOpen(false);
                 setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest2(false);
+                setIsQuestOpen(false);
                 setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
                 handleQuestComplete();
@@ -441,11 +452,13 @@ export const GameManager = () => {
             <Quest3
               onClose={() => {
                 setShowQuest3(false);
+                setIsQuestOpen(false);
                 setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest3(false);
+                setIsQuestOpen(false);
                 setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
                 handleQuestComplete();
@@ -456,11 +469,13 @@ export const GameManager = () => {
             <Quest4
               onClose={() => {
                 setShowQuest4(false);
+                setIsQuestOpen(false);
                 setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
               }}
               onFinish={() => {
                 setShowQuest4(false);
+                setIsQuestOpen(false);
                 setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
                 handleQuestComplete();
