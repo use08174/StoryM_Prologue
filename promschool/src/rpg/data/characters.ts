@@ -39,6 +39,13 @@ const characters: Record<string, Character> = {
     arrestable: false,
   }),
 
+  main_boy: createCharacter({
+    eastworldId: "main_boy",
+    sprite: "main_boy",
+    photo: "assets/photos/sumin_shim.jpeg",
+    arrestable: false,
+  }),
+
   Sumin: createCharacter({
     eastworldId: "Sumin",
     sprite: "sumin_shim",
