@@ -33,6 +33,7 @@ import Quest1 from "./Quest1/Quest1";
 import Quest2 from "./Quest2/Quest2";
 import Quest3 from "./Quest3/Quest3";
 import Quest4 from "./Quest4/Quest4";
+import Quest5Library from "./Library/Quest5Library";
 import PolicyTipIcon from "./PolicyTipIcon";
 import MiniMap from "./MiniMap";
 
@@ -101,11 +102,15 @@ export const GameManager = () => {
   const [showQuest2, setShowQuest2] = useState(false);
   const [showQuest3, setShowQuest3] = useState(false);
   const [showQuest4, setShowQuest4] = useState(false);
+  const [showQuest5, setShowQuest5] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showQuestModal, setShowQuestModal] = useState(false);
-  const [currentQuest, setCurrentQuest] = useState<1 | 2 | 3 | 4>(1);
+  //const [currentQuest, setCurrentQuest] = useState<1 | 2 | 3 | 4>(1);
   const [isQuestOpen, setIsQuestOpen] = useState(false);
-  const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 | 4 | null>(null);
+  //const [pendingQuest, setPendingQuest] = useState<1 | 2 | 3 | 4 | null>(null);
+  type QuestId = 1 | 2 | 3 | 4 | 5;
+  const [currentQuest, setCurrentQuest] = useState<QuestId>(1);
+  const [pendingQuest, setPendingQuest] = useState<QuestId | null>(null);
   const [spaceHint, setSpaceHint] = useState(false); // Space 안내 뱃지
   const toast = useToast();
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -202,6 +207,10 @@ export const GameManager = () => {
         setPendingQuest(4);
         setShowConfirm(true);
       }),
+      PubSub.subscribe((Topics as any).startQuest5, () => {
+        setPendingQuest(5);
+        setShowConfirm(true);
+      })
     ];
     return () => subs.forEach((s) => PubSub.unsubscribe(s));
   }, []);
@@ -220,6 +229,7 @@ export const GameManager = () => {
         showQuest2 ||
         showQuest3 ||
         showQuest4 ||
+        showQuest5 ||
         isQuestOpen;
 
       if (modalOpen) return;
@@ -232,12 +242,17 @@ export const GameManager = () => {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showPhoneIntro, showChatModal, showConfirm, showQuest1, showQuest2, showQuest3, showQuest4, isQuestOpen,currentQuest]);
+  }, [showPhoneIntro, showChatModal, showConfirm, showQuest1, showQuest2, showQuest3, showQuest4, showQuest5, isQuestOpen,currentQuest]);
 
   // 퀘스트 완료 시 EXP/진행
   const handleQuestComplete = () => {
-  setCurrentQuest(prev => (prev === 1 ? 2 : prev === 2 ? 3 : prev === 3 ? 4 : 4));
-};
+    setCurrentQuest((prev) => {
+      if (prev < 5) {
+        return (prev + 1) as QuestId; // 1→2→3→4→5
+      }
+      return prev; // 5면 그대로 유지
+    });
+  };
 
   return (
     <Box height="100vh" width="100vw">
@@ -392,6 +407,10 @@ export const GameManager = () => {
                   PubSub.publish(Topics.giveKeysToDom);
                   setShowQuest4(true);
                 }
+                if (q === 5) {
+                  PubSub.publish(Topics.giveKeysToDom);
+                  setShowQuest5(true);
+                }
                 setPendingQuest(null);
               });
             }}
@@ -483,6 +502,23 @@ export const GameManager = () => {
               }}
               onFinish={() => {
                 setShowQuest4(false);
+                setIsQuestOpen(false);
+                setPaused(false);
+                PubSub.publish(Topics.giveKeysToGame);
+                handleQuestComplete();
+              }}
+            />
+          )}
+          {showQuest5 && (
+            <Quest5Library
+              onClose={() => {
+                setShowQuest5(false);
+                setIsQuestOpen(false);
+                setPaused(false);
+                PubSub.publish(Topics.giveKeysToGame);
+              }}
+              onFinish={() => {
+                setShowQuest5(false);
                 setIsQuestOpen(false);
                 setPaused(false);
                 PubSub.publish(Topics.giveKeysToGame);
