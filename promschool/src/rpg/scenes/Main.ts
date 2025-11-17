@@ -187,7 +187,7 @@ export default class Main extends Phaser.Scene {
     this.quest1 = createQuestZone(
       650,
       708,
-      "🚇 이곳은 퀘스트 1 구역입니다.\n[SPACE]를 눌러 퀘스트를 시작하세요.",
+      "🚇 이곳은 퀘스트 1 구역입니다.\n[SPACE]를 눌러 퀘스트1을 시작하세요.",
       1
     );
     this.quest2 = createQuestZone(
@@ -209,9 +209,9 @@ export default class Main extends Phaser.Scene {
       4
     );
     this.quest5 = createQuestZone(
-      -320,
+      -420,
       302,
-      "🏢 이곳은 도서관입니다.\n[SPACE]를 눌러 원하는 정보를 찾아보세요.",
+      "📚 이곳은 도서관입니다.\n[SPACE]를 눌러 원하는 정보를 찾아보세요.",
       5
     );
 
