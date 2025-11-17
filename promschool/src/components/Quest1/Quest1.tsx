@@ -16,6 +16,8 @@ import {
 } from "@chakra-ui/react";
 import { PIXEL_PALETTE as C } from "../pixelpalette";
 import Quest1MessageModal from "./MessageModal";
+import Quest1Rulebook from "./Quest1Rulebook"; // ✅ 새 컴포넌트
+
 
 type Props = {
   isOpen: boolean;
@@ -696,26 +698,17 @@ export default function Quest1({
                         필수 항목(🏠 주거, 🥦 식비, 📶 통신) 1개 이상 + 안정성/건강 기준을 만족해야 해.
                       </Text>
                       <HStack pt={1}>
-                      <Button colorScheme="purple" onClick={() => setShowGuide(true)}>
-                        시작하기 (Space)
-                      </Button>
-                        <Button
-                          variant="outline"
-                          borderColor={C.border}
-                          color={C.border}
-                          _hover={{ bg: C.ribbon }}
-                          onClick={() =>
-                            alert(
-                              `규칙
-1) 필수: 주거·식비·통신(각 1개 이상)
-2) 예산 초과는 담기지 않음, 남은 예산 0이 되면 즉시 종료
-3) 성공 조건: 필수 충족 && 안정성 ≥ ${CONFIG.THRESH.stabilityMin} && 건강 ≥ ${CONFIG.THRESH.healthMin}`
-                            )
-                          }
-                        >
-                          규칙 보기
+                        <Button colorScheme="purple" onClick={() => setShowGuide(true)}>
+                          시작하기 (Space)
                         </Button>
+
+                        {/* ✅ 게임 룰북 모달 */}
+                        <Quest1Rulebook
+                          stabilityMin={CONFIG.THRESH.stabilityMin}
+                          healthMin={CONFIG.THRESH.healthMin}
+                        />
                       </HStack>
+
                       <Text fontSize="xs" opacity={0.7} color={C.border}>Space: 시작/일시정지 · Esc: 닫기</Text>
                     </>
                   )}
