@@ -16,12 +16,14 @@ import {
 } from "@chakra-ui/react";
 import { WarningTwoIcon } from "@chakra-ui/icons";
 import { useSfx } from "../../lib/usingSfx"; // 프로젝트 경로에 맞춰 유지
+import type { Quest2Scene } from "./Quest2MessageModal";
 
 type ChoiceFlowProps = {
   type: 1 | 2 | 3;
   houseIndex?: 1 | 2 ;
   onClose: () => void;
   onComplete: () => void;
+  onHint?: (scene: Quest2Scene) => void; 
 };
 
 type ActionItem = { key: string; label: string; sfx?: string; img?: string };
@@ -45,7 +47,7 @@ type Scene = {
 };
 
 const S = {
-  border: "#333",
+  border: "#484747ff",
   primary: "#7E44A8",
   shadow: "rgba(0,0,0,0.45)",
   done: "#3DBE8B",
@@ -53,9 +55,9 @@ const S = {
 };
 
 const L = {
-  contentW: 'min(1400px, 98vw)', // 🔼 전체 너비 (원래 1480/96)
-  panelW: 420,                   // 🔼 체크리스트 폭(px) (원래 360/260)
-  gap: 20,                       // 🔽 좌우 간격(px) (원래 24)
+  contentW: 'min(1400px, 98vw)', 
+  panelW: 420,                   
+  gap: 20,                       
 };
 
 /* ====== 장면 정의 ====== */
@@ -82,7 +84,7 @@ const scene1: Scene = {
       zoomImg: "/assets/quest2_scenes/room1_sink.png",
       actions: [
         { key: "sink", label: "싱크대 살펴보기", img: "/assets/quest2_scenes/room1_sink.png" },
-        { key: "water", label: "물 틀어보기", sfx: "/assets/quest2/sfx_water_on.mp3", img: "/assets/quest2_scenes/room1_sink_with_water.png" },
+        { key: "water", label: "물 틀어보기", img: "/assets/quest2_scenes/room1_sink_with_water.png" },
         { key: "drain", label: "배수/하부 누수 확인", img: "/assets/quest2_scenes/room1_sink_below.png" },
       ],
       pins: [[20, 50], [55, 40], [80, 78]],
@@ -133,7 +135,7 @@ const scene2: Scene = {
       zoomImg: "/assets/quest2_scenes/room2_veranda.png",
       actions: [
         { key: "window", label: "창문 열기", img: "/assets/quest2_scenes/room2_veranda.png" },
-        { key: "drain", label: "배수구", img: "/assets/quest2_scenes/room2_veranda_drain.png" },
+        { key: "drain", label: "배수구", img: "/assets/quest2_scenes/room2_veranda_tile.png" },
         { key: "tile", label: "타일 상태", img: "/assets/quest2_scenes/room2_veranda_tile.png" },
       ],
       pins: [[34, 40], [62, 72], [84, 54]],
@@ -147,6 +149,7 @@ export default function ChoiceFlow({
   houseIndex = 1,
   onClose,
   onComplete,
+  onHint,
 }: ChoiceFlowProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
@@ -161,6 +164,9 @@ export default function ChoiceFlow({
   const [visited, setVisited] = useState<Record<string, boolean>>({});
   const [shotImg, setShotImg] = useState<string | null>(null);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [hintShown, setHintShown] = useState<Record<string, boolean>>({});
+  const [actionHintShown, setActionHintShown] = useState<Record<string, boolean>>({});
+
 
   const { play: playSfx, preload } = useSfx();
 
@@ -175,6 +181,53 @@ export default function ChoiceFlow({
     });
     preload(urls);
   }, [scene, preload]);
+
+  // ChoiceFlow 컴포넌트 내부에 헬퍼 추가
+  const getBuddyScene = (h: 1|2|3, v: 1|2|3): Quest2Scene | null => {
+    // h=1: (창문/싱크대/화장실)  v=1/2/3
+    if (h === 1) {
+      if (v === 1) return "h1_window_buddy";
+      if (v === 2) return "h1_sink_buddy";
+      if (v === 3) return "h1_toilet_buddy";
+    }
+    // h=2: (현관문/보일러/외부) → 네가 원한게 벽지/붙박이/베란다면 여길 바꿔!
+    if (h === 2) {
+      if (v === 1) return "h2_wall_buddy";
+      if (v === 2) return "h2_closet_buddy";
+      if (v === 3) return "h2_veranda_buddy";
+    }
+    // 필요 시 h===3도 추가
+    return null;
+  };
+
+  const getAfterScene = (h: 1|2|3, v: 1|2|3, actionKey: string): Quest2Scene | null => {
+    // 매물 1: 창문/싱크대/화장실
+    if (h === 1) {
+      if (v === 1) { // 창문
+        if (actionKey === "open" || actionKey === "sill" || actionKey === "lock") return "h1_window_after";
+      }
+      if (v === 2) { // 싱크대
+        if (actionKey === "water" || actionKey === "drain") return "h1_sink_after";
+      }
+      if (v === 3) { // 화장실
+        if (actionKey === "tap" || actionKey === "flush" || actionKey === "fan") return "h1_toilet_after";
+      }
+    }
+
+    // 매물 2: 벽지/붙박이/베란다
+    if (h === 2) {
+      if (v === 1) { // 벽지/바닥
+        if (actionKey === "wall" || actionKey === "floor") return "h2_wall_after";
+      }
+      if (v === 2) { // 붙박이장
+        if (actionKey === "inside") return "h2_closet_after";
+      }
+      if (v === 3) { // 베란다
+        if (actionKey === "window" || actionKey === "drain" || actionKey === "tile") return "h2_veranda_after";
+      }
+    }
+    return null;
+  };
 
   // 통합 체크리스트 소스(9개)
   const checklist = useMemo(() => {
@@ -248,7 +301,16 @@ export default function ChoiceFlow({
     setVisited((v) => ({ ...v, [`${viewType}-${a.key}`]: true }));
     setShotImg(a.img ?? null);
     setActiveIdx(idx);
+
+    const actionKey = `${houseIndex}-${viewType}-${a.key}`;
+    if (!actionHintShown[actionKey]) {
+      const afterScene = getAfterScene(houseIndex as 1|2|3, viewType, a.key);
+      console.log("AFTER?", { action: a.key, afterScene });
+      if (afterScene) onHint?.(afterScene);
+      setActionHintShown((m) => ({ ...m, [actionKey]: true }));
+    }
   };
+
 
   // 글로벌(체크리스트/개요)에서 특정 g, idx 실행
   const triggerActionGlobal = (g: 1 | 2 | 3, idx: number) => {
@@ -261,8 +323,17 @@ export default function ChoiceFlow({
       setVisited((v) => ({ ...v, [`${g}-${a.key}`]: true }));
       setShotImg(a.img ?? null);
       setActiveIdx(idx);
+
+      // ✅ 체크리스트 경유로 들어와도 처음만 힌트
+      const keyForHint = `${houseIndex}-${g}`;
+      if (!hintShown[keyForHint]) {
+        const sceneKey = getBuddyScene(houseIndex as 1|2|3, g);
+        if (sceneKey) onHint?.(sceneKey);
+        setHintShown((m) => ({ ...m, [keyForHint]: true }));
+      }
     }, 0);
   };
+
 
   /* ---------- 작은 UI 파츠 ---------- */
   const WarningBadge = () => (
@@ -327,6 +398,7 @@ export default function ChoiceFlow({
       maxW={L.contentW}
       position="relative"
       border={`3px solid ${S.border}`}
+      
       borderRadius="16px"
       overflow="hidden"
       boxShadow={`0 10px 24px ${S.shadow}`}
@@ -353,6 +425,13 @@ export default function ChoiceFlow({
                 setShotImg(null);
                 setActiveIdx(null);
                 setPhase("zoom");
+
+                const keyForHint = `${houseIndex}-${k}`;
+                if (!hintShown[keyForHint]) {
+                  const sceneKey = getBuddyScene(houseIndex as 1|2|3, k);
+                  if (sceneKey) onHint?.(sceneKey);
+                  setHintShown((m) => ({ ...m, [keyForHint]: true }));
+                }
               }}
               sx={
                 !prefersReducedMotion
@@ -403,6 +482,7 @@ export default function ChoiceFlow({
       borderRadius="16px"
       overflow="hidden"
       boxShadow={`0 16px 36px ${S.shadow}`}
+      fontFamily="NeoDGM"
     >
       <Image src={hotspot.zoomImg} alt="zoom" w="100%" draggable={false} />
 
@@ -522,10 +602,10 @@ export default function ChoiceFlow({
               <Box />
             )}
             {!allDone ? (
-              <Text color="#bbb">모든 항목을 완료하세요.</Text>
+              <Text color="#ffffffff">모든 항목을 완료하세요.</Text>
             ) : (
               <Text color="#2f855a" fontWeight="semibold">
-                완료! 다음 매물로 이동합니다…
+                완료! 다음 매물로 이동합니다.
               </Text>
             )}
           </HStack>

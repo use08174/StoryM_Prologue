@@ -1,4 +1,3 @@
-// components/Library/Quest5Library.tsx
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -41,7 +40,7 @@ type CategoryConfig = {
   icon: string;
   intro: string;
   tip?: string;
-  featuredIds: string[]; // 강조해서 보여줄 핵심 링크
+  featuredIds: string[]; 
 };
 
 // ====== 데이터 정의 영역 ======
@@ -290,8 +289,6 @@ const categories: CategoryConfig[] = [
     featuredIds: ["seoul-youth-all", "ontong-youth"],
   },
 ];
-
-// ====== 컴포넌트 ======
 
 export default function Quest5Library({ onClose, onFinish }: Quest5LibraryProps) {
   const [current, setCurrent] = useState<CategoryId>("housing");
