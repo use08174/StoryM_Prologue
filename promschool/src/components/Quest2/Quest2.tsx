@@ -1,6 +1,8 @@
+// src/components/Quest2/Quest2.tsx
 import { useEffect, useState } from "react";
 import { Box, Text, Button, HStack } from "@chakra-ui/react";
 import ChoiceFlow from "./ChoiceFlow";
+import Quest2MsgModal, { Quest2Scene } from "./Quest2MessageModal";
 
 const C = { shadow: "rgba(0,0,0,0.55)" };
 
@@ -13,7 +15,10 @@ type Quest2Props = {
 
 export default function Quest2({ onClose, onFinish }: Quest2Props) {
   const [house, setHouse] = useState<HouseId>(1);
-  const [stage, setStage] = useState<"house" | "final">("house"); // ✅ 최종선택 단계
+  const [stage, setStage] = useState<"house" | "final">("house");
+
+  const [msgOpen, setMsgOpen] = useState(false);
+  const [msgScene, setMsgScene] = useState<Quest2Scene>("house1_intro");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -22,6 +27,11 @@ export default function Quest2({ onClose, onFinish }: Quest2Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  useEffect(() => {
+    setMsgScene("house1_intro");
+    setMsgOpen(true);
+  }, []);
 
   const FinalSelect = () => (
     <Box
@@ -41,19 +51,27 @@ export default function Quest2({ onClose, onFinish }: Quest2Props) {
         minW={["90%", "720px"]}
         textAlign="center"
       >
-        <Text fontFamily="NeoDGM" fontSize="xl" mb={3}>Quest2</Text>
+        <Text fontFamily="NeoDGM" fontSize="xl" mb={3}>
+          Quest 2 · 최종 선택
+        </Text>
         <Text mb={6}>어떤 매물을 최종 선택하시겠습니까?</Text>
         <HStack spacing={4} justify="center">
           <Button
             size="lg"
-            onClick={() => { onFinish?.(); onClose?.(); }}
+            onClick={() => {
+              setMsgScene("failed");
+              setMsgOpen(true);
+            }}
             colorScheme="blue"
           >
             (1) 첫 번째 매물
           </Button>
           <Button
             size="lg"
-            onClick={() => { onFinish?.(); onClose?.(); }}
+            onClick={() => {
+              setMsgScene("success");
+              setMsgOpen(true);
+            }}
             colorScheme="pink"
           >
             (2) 두 번째 매물
@@ -96,16 +114,60 @@ export default function Quest2({ onClose, onFinish }: Quest2Props) {
             key={house}
             type={1}
             houseIndex={house}
-            onClose={() => onClose?.()} // 사용자가 수동으로 닫을 때만
+            onHint={(scene) => {
+              setMsgScene(scene);    // 메시지 모달 씬키
+              setMsgOpen(true);      // 메시지 모달 열기
+            }}
+            onClose={() => onClose?.()} // 사용자가 수동으로 닫을 때만 종료
             onComplete={() => {
-              if (house === 1) setHouse(2);
-              else setStage("final");
+              if (house === 1) {
+                // ➜ 두 번째 매물로 전환 + 인트로 말풍선
+                setHouse(2);
+                setTimeout(() => {
+                  setMsgScene("house2_intro");
+                  setMsgOpen(true);
+                }, 0);
+              } else {
+                // ➜ 최종 선택 단계 진입 + “최종 선택” 말풍선
+                setStage("final");
+                setTimeout(() => {
+                  setMsgScene("final_select");
+                  setMsgOpen(true);
+                }, 0);
+              }
             }}
           />
         )}
 
         {stage === "final" && <FinalSelect />}
       </Box>
+
+      {/* ✅ 퀘스트2 말풍선 모달 */}
+      <Quest2MsgModal
+        isOpen={msgOpen}
+        scene={msgScene}
+        onClose={() => setMsgOpen(false)}
+        dimBackground  
+        onComplete={() => {
+          // 말풍선 종료 후 분기 처리
+          if (msgScene === "success") {
+            // 성공: 보상 안내 후 퀘스트 종료
+            setMsgOpen(false);
+            onFinish?.();
+            onClose?.();
+          } else if (msgScene === "failed") {
+            // 실패: 재선택 요구 → 다시 최종 선택 말풍선으로 유도(또는 바로 FinalSelect만 유지)
+            setMsgOpen(false);
+            setStage("final");
+            setTimeout(() => {
+              setMsgScene("final_select");
+              setMsgOpen(true);
+            }, 0);
+          } else {
+            setMsgOpen(false);
+          }
+        }}
+      />
     </Box>
   );
 }

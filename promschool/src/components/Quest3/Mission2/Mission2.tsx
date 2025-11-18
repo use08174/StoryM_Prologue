@@ -27,7 +27,7 @@ export default function Mission2({ onResult }: { onResult: () => void }) {
   const allDone = checkedDocs.length === docs.length;
 
   return (
-    <StageScene bg="/assets/quest3_scenes/desk_bg.png" width={980}>
+    <StageScene bg="/assets/background/quest_back.png" width={980}>
       <VStack
         align="stretch"
         bg="rgba(0,0,0,0.35)"
