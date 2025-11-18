@@ -55,7 +55,7 @@ export default function Quest4({ onFinish }: Props) {
         {/* ① 인트로 */}
         {step === "intro" && (
           <>
-            <Text fontSize="2xl" fontWeight="bold" color={C.accent}>전입신고 완료하기</Text>
+            <Text fontSize="2xl" fontWeight="bold" fontFamily="NeoDGM" color={C.accent}>전입신고 완료하기</Text>
             <Text textAlign="center" color="gray.200">
               아직 한 단계가 남았어요! 주민센터에 방문하거나 온라인으로 전입신고를 완료해요.
             </Text>
@@ -138,14 +138,14 @@ export default function Quest4({ onFinish }: Props) {
         {/* ④ 완료 */}
         {step === "done" && (
           <VStack spacing={5}>
-            <Text fontSize="2xl" fontWeight="bold" color="teal.300">
+            <Text fontSize="2xl" fontWeight="bold" color="teal.300" fontFamily="NeoDGM">
               [전입신고 및 확정일자 완료!]
             </Text>
-            <Text textAlign="center" color="gray.200">
+            <Text textAlign="center" color="gray.200" fontFamily="NeoDGM" >
               전입신고와 확정일자까지 모두 완료했습니다.  
               이제 진짜 내 이름으로 된 안전한 보금자리가 되었어요 🏠
             </Text>
-            <Button colorScheme="teal" onClick={onFinish}>닫기</Button>
+            <Button colorScheme="teal" fontFamily="NeoDGM" onClick={onFinish}>닫기</Button>
           </VStack>
         )}
       </VStack>

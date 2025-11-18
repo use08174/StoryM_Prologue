@@ -11,6 +11,9 @@ type Props = {
   onFinish: () => void; // 퀘스트3 전체 완료 시 호출
 };
 
+const C = { shadow: "rgba(0,0,0,0.55)" };
+
+
 export default function Quest3({ onClose, onFinish }: Props) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1); 
   const [m1Result, setM1Result] = useState<boolean | null>(null);
@@ -32,6 +35,22 @@ export default function Quest3({ onClose, onFinish }: Props) {
       alignItems="center"
       justifyContent="center"
       color="white"
+      _before={{
+        content: '""',
+        position: "absolute",
+        inset: 0,
+        backgroundImage: "url('/assets/background/quest_back.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+      _after={{
+        content: '""',
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        opacity: 0.34,
+      }}
     >
       {/* STEP 1: 미션1 본게임 */}
       {step === 1 && m1Result === null && (
@@ -52,7 +71,9 @@ export default function Quest3({ onClose, onFinish }: Props) {
             </Text>
           </Box>
           <Button
-            colorScheme="teal"
+            colorScheme="purple"
+            fontFamily="NeoDGM"
+            width={500}
             onClick={() => {
               setStep(2);          // ✅ 미션2 단계로 전환
               setShowM2Intro(true); // ✅ 미션2 안내 모달 열기
