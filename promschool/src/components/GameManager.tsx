@@ -35,6 +35,8 @@ import Quest3 from "./Quest3/Quest3";
 import Quest4 from "./Quest4/Quest4";
 import Quest5Library from "./Library/Quest5Library";
 import PolicyTipIcon from "./PolicyTipIcon";
+import MiniMap from "./MiniMap";
+
 
 
 /** 폰 알림 클릭 시 띄우는 챗봇 인트로 모달 */
@@ -334,6 +336,12 @@ export const GameManager = () => {
           <Center width="100%" height="100%">
             <Game paused={paused} />
           </Center>
+          {/* ✅ 여기 미니맵 추가 */}
+          <MiniMap
+            mapSrc="./assets/maps/prologue_map.png" // 실제 맵 이미지 경로로 변경
+            miniSize="160px"
+            position={{ bottom: "20px", left: "20px" }} // 왼쪽 아래로 두고 싶으면 { bottom: "20px", left: "20px" }
+          />
 
           {/* Space 힌트 배지 */}
           {spaceHint && (
