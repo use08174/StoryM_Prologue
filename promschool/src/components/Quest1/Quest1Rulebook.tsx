@@ -22,7 +22,7 @@ import { SimpleGrid } from "@chakra-ui/react";
 type Quest1RulebookProps = {
   stabilityMin: number;
   healthMin: number;
-  autoOpen?: boolean; // 🔥 추가
+  autoOpen?: boolean;
 };
 
 type SlideDef = {
