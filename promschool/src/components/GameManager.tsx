@@ -39,6 +39,7 @@ import MiniMap from "./MiniMap";
 import { usePolicyTipStore } from "state/policyTipStore";
 import type { TipTopicType } from "state/policyTipStore";
 import { createCharacter, getCharacterMeta, type CharacterMeta } from "features/getCharacterMeta";
+import SettingsModal from "./SettingsModal";
 
 /** 폰 알림 클릭 시 띄우는 챗봇 인트로 모달 */
 function PhoneIntroModal({
@@ -105,6 +106,7 @@ export const GameManager = () => {
   const [alarm, setAlarm] = useState(0);
   const [paused, setPaused] = useState(false);
   const [showPhoneIntro, setShowPhoneIntro] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showQuest1, setShowQuest1] = useState(false);
   const [showQuest2, setShowQuest2] = useState(false);
@@ -397,6 +399,11 @@ export const GameManager = () => {
               boxSize="60px"
               cursor="pointer"
               _hover={{ transform: "scale(1.06)" }}
+              onClick={() => {
+                setShowSettingsModal(true);
+                setPaused(true);
+                PubSub.publish(Topics.giveKeysToDom);   // ← 기존 흐름상 필요하더라
+              }}
             />
           </HStack>
 
@@ -443,6 +450,15 @@ export const GameManager = () => {
               setPaused(false);
               setSpaceHint(true);
               setTimeout(() => setSpaceHint(false), 5000);
+              PubSub.publish(Topics.giveKeysToGame);
+            }}
+          />
+
+          <SettingsModal
+            isOpen={showSettingsModal}
+            onClose={() => {
+              setShowSettingsModal(false);
+              setPaused(false);
               PubSub.publish(Topics.giveKeysToGame);
             }}
           />
