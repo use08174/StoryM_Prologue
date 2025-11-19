@@ -55,11 +55,12 @@ export default function Quest2({ onClose, onFinish }: Quest2Props) {
       >
         <Text fontFamily="NeoDGM" fontSize="xl" mb={3}>
           Quest 2 · 최종 선택
-        </Text>
-        <Text mb={6}>어떤 매물을 최종 선택하시겠습니까?</Text>
+        </Text >
+        <Text fontFamily="NeoDGM"mb={6}>어떤 매물을 최종 선택하시겠습니까?</Text>
         <HStack spacing={4} justify="center">
           <Button
             size="lg"
+            fontFamily="NeoDGM"
             onClick={() => {
               setMsgScene("failed");
               setMsgOpen(true);
@@ -70,6 +71,7 @@ export default function Quest2({ onClose, onFinish }: Quest2Props) {
           </Button>
           <Button
             size="lg"
+            fontFamily="NeoDGM"
             onClick={() => {
               setMsgScene("success");
               setMsgOpen(true);

@@ -94,21 +94,7 @@ export default function QuestStatusModal({
                         >
                           퀘스트 {q.id}. {q.title}
                         </Text>
-                        {unlocked ? (
-                          isCurrent ? (
-                            <Tag size="sm" bg={C.accent} color={C.primary} {...pixelBorder(C.primary, C.primary)}>
-                              진행중
-                            </Tag>
-                          ) : (
-                            <Tag size="sm" bg={C.mid} color="white" {...pixelBorder(C.primary, C.primary)}>
-                              완료
-                            </Tag>
-                          )
-                        ) : (
-                          <Tag size="sm" bg="#2a2731" color="#B9B4C2" {...pixelBorder("#3b2c49", "#3b2c49")}>
-                            잠김
-                          </Tag>
-                        )}
+                        
                       </HStack>
 
                       <Text fontSize="13px" color="#CFCFD6" fontFamily="NeoDGM">

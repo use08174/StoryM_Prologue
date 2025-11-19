@@ -14,6 +14,7 @@ enum Topics {
   quest2Completed ="quest/2/completed",
   quest3Completed = "quest/3/completed",
   quest4Completed = "quest/4/completed",
+  atQuestZone= "quest/zone/active",
 
 }
 
