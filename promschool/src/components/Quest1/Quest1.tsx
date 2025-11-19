@@ -18,6 +18,9 @@ import { PIXEL_PALETTE as C } from "../pixelpalette";
 import Quest1MessageModal from "./MessageModal";
 import Quest1Rulebook from "./Quest1Rulebook"; // ✅ 새 컴포넌트
 
+// 카드 안에 들어갈 아이콘 이미지 크기
+const DROP_ICON_SIZE = 40;
+
 
 type Props = {
   isOpen: boolean;
@@ -136,29 +139,120 @@ export default function Quest1({
 }: Props) {
   const reduce = usePrefersReducedMotion();
   const toast = useToast();
-  const showCenterToast = (title: string, body: string, status: "success" | "error" | "info" | "warning" = "success") =>
-    toast({
-      duration: 2600,
-      isClosable: true,
-      render: () => (
+  const showCenterToast = (
+  title: string,
+  body: string,
+  status: "success" | "error" | "info" | "warning" = "success"
+) =>
+  toast({
+    duration: status === "success" ? 2000 : 2000, // 🔸 좀 더 빨리 사라지게
+    isClosable: false,
+    render: () => {
+      const variants = {
+        success: {
+          emoji: "✅",
+          label: "MISSION CLEAR",
+          ring: "#4ade80",
+          bg: "linear-gradient(135deg, rgba(34,197,94,0.98), rgba(22,163,74,0.95))",
+        },
+        error: {
+          emoji: "❌",
+          label: "MISSION FAILED",
+          ring: "#fb7185",
+          bg: "linear-gradient(135deg, rgba(248,113,113,0.98), rgba(220,38,38,0.95))",
+        },
+        info: {
+          emoji: "💡",
+          label: "NOTICE",
+          ring: "#38bdf8",
+          bg: "linear-gradient(135deg, rgba(56,189,248,0.98), rgba(37,99,235,0.95))",
+        },
+        warning: {
+          emoji: "⚠️",
+          label: "CAUTION",
+          ring: "#facc15",
+          bg: "linear-gradient(135deg, rgba(250,204,21,0.98), rgba(217,119,6,0.95))",
+        },
+      } as const;
+
+      const v = variants[status] ?? variants.info;
+
+      return (
         <Box
-          p={4}
-          bg="rgba(204, 210, 255, 0.96)"
-          border="2px solid #FCCFDB"
-          borderRadius="xl"
-          boxShadow="xl"
           position="fixed"
           top="50%"
           left="50%"
           transform="translate(-50%, -50%)"
-          textAlign="center"
-          minW="320px"
+          zIndex={2000}
+          pointerEvents="none"
         >
-          <Text fontWeight="bold" fontSize="lg" mb={1}>{title}</Text>
-          <Text whiteSpace="pre-wrap" fontSize="sm">{body}</Text>
+          <Box
+            pointerEvents="auto"
+            px={5}
+            py={4}
+            minW="320px"
+            maxW="420px"
+            bg={v.bg}
+            borderRadius="20px"
+            border={`3px solid ${v.ring}`}
+            boxShadow={`0 16px 40px rgba(15,23,42,0.55)`}
+            color="white"
+            fontFamily="'NeoDGM', system-ui, sans-serif"
+            position="relative"
+            overflow="hidden"
+            animation="toast-pop 0.26s ease-out"
+          >
+            {/* 테두리 안쪽 라인 */}
+            <Box
+              position="absolute"
+              inset="4px"
+              borderRadius="14px"
+              border="1px solid rgba(15,23,42,0.45)"
+              opacity={0.7}
+              pointerEvents="none"
+            />
+
+            <HStack spacing={3} align="flex-start" position="relative" zIndex={1}>
+              <Box
+                w="40px"
+                h="40px"
+                borderRadius="full"
+                bg="rgba(15,23,42,0.35)"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                fontSize="2xl"
+              >
+                {v.emoji}
+              </Box>
+              <VStack align="flex-start" spacing={1} flex="1">
+                <Text
+                  fontSize="10px"
+                  textTransform="uppercase"
+                  letterSpacing="0.18em"
+                  opacity={0.85}
+                >
+                  {v.label}
+                </Text>
+                <Text fontWeight="bold" fontSize="lg">
+                  {title}
+                </Text>
+                <Text
+                  fontSize="sm"
+                  opacity={0.9}
+                  whiteSpace="pre-wrap"
+                  lineHeight="1.4"
+                >
+                  {body}
+                </Text>
+              </VStack>
+            </HStack>
+          </Box>
         </Box>
-      ),
-    });
+      );
+    },
+  });
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [showGuide, setShowGuide] = useState(false);
@@ -231,12 +325,28 @@ export default function Quest1({
     if (ctx) ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   };
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onRz = () => resizeCanvas();
-    window.addEventListener("resize", onRz);
-    return () => window.removeEventListener("resize", onRz);
-  }, [isOpen]);
+  // 초기화
+useEffect(() => {
+  if (!isOpen) return;
+  const st = stateRef.current;
+  st.pool = mode === "edu" ? buildFixed() : [];
+  st.timer = 0; st.nextDrop = 0; st.drops = [];
+  st.keys.clear();
+  st.cart = { x: st.width/2, y: st.height-32, w: 132, h: 24 };
+  setSpentManwon(0);
+  setBag({});
+  setReqCount(0);
+  setOverBudget(false);
+  setRunning(false);
+  setPaused(false);
+  setOverlay("intro");
+  setFailReason("");
+  lastTimeRef.current = null;
+  resizeCanvas();
+  // 🔥 추가 끝
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isOpen, mode]);
+
 
   // 입력
   useEffect(() => {
@@ -339,7 +449,7 @@ export default function Quest1({
     );
 
     onFinish({
-      remainKRW: remain * 10000,
+      remainKRW: remain * 100,
       requiredOk: evalRes.requiredOk,
       kpis: evalRes.k,
       bag: bagFinal,
@@ -508,43 +618,54 @@ export default function Quest1({
   };
 
   // drawDrop 내부
-  const drawDrop = (ctx:CanvasRenderingContext2D, d:Drop) => {
-    const W = CONFIG.DROP_W, H = CONFIG.DROP_H;
+  const drawDrop = (ctx: CanvasRenderingContext2D, d: Drop) => {
+  const ICON_SIZE = DROP_ICON_SIZE;
 
-    // 카드(과일 본체) 외곽선 두께
-    ctx.save();
-    ctx.lineWidth = CONFIG.DROP_BORDER;
-    roundRect(ctx, d.x - W/2, d.y - H/2, W, H, CONFIG.DROP_RADIUS, true, true, CARD_BG, C.border);
-    ctx.restore();
+  // 아이콘(이모지) 기준 Y 위치
+  const iconY = d.y - 6;
 
-    // 이모지
-    ctx.font = `${CONFIG.EMOJI_FONT}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = TEXT_INK;
-    ctx.fillText(d.emoji, d.x, d.y - 3);
+  // 🔥 이모지만 그리기
+  ctx.font = `${CONFIG.EMOJI_FONT}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = TEXT_INK;
+  ctx.fillText(d.emoji, d.x, iconY);
 
-    // 가격 알약 외곽선 두께
-    ctx.save();
-    ctx.lineWidth = CONFIG.PRICE_PILL_BORDER;
-    roundRect(
-      ctx,
-      d.x - CONFIG.PRICE_PILL_W/2,
-      d.y + H/2 - 8,
-      CONFIG.PRICE_PILL_W,
-      CONFIG.PRICE_PILL_H,
-      7,
-      true,
-      true,
-      C.tileMid,
-      C.border
-    );
-    ctx.restore();
+  // ========================
+  //  가격 pill (아이콘 아래)
+  // ========================
+  const pillW = CONFIG.PRICE_PILL_W;
+  const pillH = CONFIG.PRICE_PILL_H;
+  const pillX = d.x - pillW / 2;
+  const pillY = iconY + ICON_SIZE / 2 + 4; // 아이콘 바로 아래에 위치
 
-    ctx.fillStyle = C.border;
-    ctx.font = `${CONFIG.PRICE_FONT}px system-ui`;
-    ctx.fillText(`${d.price}만`, d.x, d.y + H/2 + 1);
-  };
+  ctx.save();
+  ctx.lineWidth = CONFIG.PRICE_PILL_BORDER;
+  roundRect(
+    ctx,
+    pillX,
+    pillY,
+    pillW,
+    pillH,
+    pillH / 2,                 // pill 모양
+    true,
+    true,
+    `${C.tileLight}F2`,
+    C.border
+  );
+  ctx.restore();
+
+  ctx.save();
+  ctx.fillStyle = C.border;
+  ctx.font = `bold ${CONFIG.PRICE_FONT}px system-ui`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`${d.price}만`, d.x, pillY + pillH / 2);
+  ctx.restore();
+};
+
+
+
 
 
   const roundRect = (
@@ -616,25 +737,19 @@ export default function Quest1({
         }}
         onClose={() => setShowGuide(false)}
       />
-      <Box
+            <Box
+        // ✅ 카드 프레임 대신 전체 화면을 쓰는 레이아웃 박스
         position="absolute"
-        left="50%"
-        top="50%"
-        transform="translate(-50%, -50%)"
-        bg={FRAME_BG}
-        border={`3px solid ${FRAME_BORDER}`}
-        borderRadius="18px"
-        boxShadow={`0 10px 30px ${C.shadow}`}
-        pt={`max(56px, calc(env(safe-area-inset-top) + 32px))`}
-        px={[3,4]}
-        pb={`max(12px, env(safe-area-inset-bottom))`}
-        w={["92%", "980px"]}
+        inset={0}
+        pt={`max(64px, calc(env(safe-area-inset-top) + 32px))`}
+        pb={`max(16px, env(safe-area-inset-bottom))`}
+        px={[4, 8, 10]}
       >
-        {/* 상단 라벨 */}
+        {/* 상단 라벨 (그대로 화면 왼쪽 위에 붙여두기) */}
         <Box
           position="absolute"
           top={`max(10px, env(safe-area-inset-top))`}
-          left="14px"
+          left="18px"
           bg={LABEL_BG}
           border={`3px solid ${FRAME_BORDER}`}
           borderRadius="10px"
@@ -647,30 +762,37 @@ export default function Quest1({
           </Text>
         </Box>
 
-        <Flex gap={4} align="stretch">
-          {/* 좌: 캔버스 카드 */}
+        <Flex
+          gap={[3, 4, 6]}
+          align="stretch"
+          h="100%"
+          direction={["column-reverse", "row"]} // 모바일에서는 패널이 아래로
+        >
+          {/* 좌: 캔버스 영역 */}
           <Box
             position="relative"
             ref={containerRef}
-            bg={CARD_BG}
-            rounded="md"
-            border={`3px solid ${INNER_BORDER}`}
-            p={2}
+            flex="1 1 0"
+            minW={0}
+            rounded="lg"
+            border={`2px solid ${INNER_BORDER}`}
+            p={[2, 3]}
+            bg={`${CARD_BG}D0`}
+            backdropFilter="blur(4px)"
           >
             <canvas
               ref={canvasRef}
               width={900}
               height={520}
               style={{
-                width: "660px",
-                height: `${(520/900)*660}px`,
-                maxWidth: "min(92vw, 720px)",
-                display:"block",
+                width: "100%",     // ✅ 가로는 가능한 만큼 채우기
+                height: "auto",    // ✅ 비율 유지하면서 세로 자동
+                display: "block",
                 borderRadius: 8
               }}
             />
 
-            {/* ✅ 오버레이(시작/실패) */}
+            {/* ✅ 오버레이(인트로/실패)는 그대로 유지 */}
             {overlay && (
               <Flex
                 position="absolute"
@@ -690,40 +812,38 @@ export default function Quest1({
                   textAlign="center"
                   spacing={3}
                 >
+                  {/* intro / fail 내용 그대로 */}
                   {overlay === "intro" && (
                     <>
-                      <Heading size="md" color={TEXT_INK}>월 예산 안에서 필수 항목을 담아 KPI를 충족해 보자!</Heading>
-                      <Text color={C.border}>
-                        소득 한도({toKRW(incomeManwon)})를 초과할 수 없고,<br/>
-                        필수 항목(🏠 주거, 🥦 식비, 📶 통신) 1개 이상 + 안정성/건강 기준을 만족해야 해.
-                      </Text>
+                      <Heading size="md" color={TEXT_INK} fontFamily="'NeoDGM', system-ui, sans-serif">
+                        퀘스트 1 : 한 달 예산 꾸리기
+                      </Heading>
                       <HStack pt={1}>
-                        <Button colorScheme="purple" onClick={() => setShowGuide(true)}>
+                        <Button colorScheme="purple" onClick={() => setShowGuide(true)} fontFamily="'NeoDGM', system-ui, sans-serif">
                           시작하기 (Space)
                         </Button>
-
-                        {/* ✅ 게임 룰북 모달 */}
                         <Quest1Rulebook
                           stabilityMin={CONFIG.THRESH.stabilityMin}
                           healthMin={CONFIG.THRESH.healthMin}
+                          autoOpen={overlay === "intro"}   // 🔥 인트로일 때 자동으로 오픈
                         />
                       </HStack>
-
-                      <Text fontSize="xs" opacity={0.7} color={C.border}>Space: 시작/일시정지 · Esc: 닫기</Text>
+                      <Text fontSize="xs" opacity={0.7} color={C.border} fontFamily="'NeoDGM', system-ui, sans-serif">
+                        Space: 시작/일시정지 · Esc: 닫기
+                      </Text>
                     </>
                   )}
 
                   {overlay === "fail" && (
                     <>
-                      <Heading size="md" color={TEXT_INK}>아쉽지만 실패!</Heading>
-                      <Text color={C.border} whiteSpace="pre-wrap">
+                      <Heading size="md" color={TEXT_INK} fontFamily="'NeoDGM', system-ui, sans-serif">아쉽지만 실패!</Heading>
+                      <Text color={C.border} whiteSpace="pre-wrap" fontFamily="'NeoDGM', system-ui, sans-serif">
                         {failReason || "기준을 충족하지 못했어요."}
                       </Text>
                       <HStack>
                         <Button
                           colorScheme="purple"
                           onClick={() => {
-                            // 재시작(상태 리셋)
                             const st = stateRef.current;
                             st.pool = mode === "edu" ? buildFixed() : [];
                             st.timer = 0; st.nextDrop = 0; st.drops = [];
@@ -742,7 +862,13 @@ export default function Quest1({
                         >
                           다시하기
                         </Button>
-                        <Button variant="outline" onClick={onClose} borderColor={C.border} color={C.border} _hover={{ bg: C.ribbon }}>
+                        <Button
+                          variant="outline"
+                          onClick={onClose}
+                          borderColor={C.border}
+                          color={C.border}
+                          _hover={{ bg: C.ribbon }}
+                        >
                           닫기
                         </Button>
                       </HStack>
@@ -770,40 +896,41 @@ export default function Quest1({
             )}
           </Box>
 
-          {/* 우: 사이드 패널 */}
+          {/* 우: 사이드 패널 (오른쪽 고정 HUD 느낌) */}
           <VStack
             align="stretch"
-            bg={CARD_BG}
-            rounded="md"
-            border={`3px solid ${INNER_BORDER}`}
+            bg={GLASS_BG} // ✅ 반투명 유리 느낌으로, 배경 사진 살리기
+            rounded="lg"
+            border={`2px solid ${INNER_BORDER}`}
             p={3}
-            minW="240px"
+            minW={["100%", "260px"]}
+            maxW={["100%", "320px"]}
             spacing={3}
             sx={!reduce && overBudget ? { animation: "shake 0.35s ease" } : undefined}
           >
+            {/* 아래 내용은 기존 그대로 */}
             <HStack justify="space-between">
-              <Badge colorScheme="purple" rounded="full" px={2}>월급</Badge>
+              <Badge colorScheme="purple" rounded="full" px={2} fontFamily="'NeoDGM', system-ui, sans-serif">월급</Badge>
               <Text fontWeight="bold" color={TEXT_INK}>{toKRW(incomeManwon)}</Text>
             </HStack>
 
             <HStack justify="space-between">
-              <Badge colorScheme="purple" rounded="full" px={2}>필수</Badge>
+              <Badge colorScheme="purple" rounded="full" px={2} fontFamily="'NeoDGM', system-ui, sans-serif">필수</Badge>
               <Text color={TEXT_INK}>{reqCount}/{CONFIG.REQUIRED_KEYS.length}</Text>
             </HStack>
 
-            {overBudget && <Badge colorScheme="red">예산 초과!</Badge>}
+            {overBudget && <Badge colorScheme="red" fontFamily="'NeoDGM', system-ui, sans-serif">예산 초과!</Badge>}
 
             <Divider borderColor={C.border} opacity={0.3}/>
 
-            <Text fontSize="sm" color={C.border}>남은 예산</Text>
-            <Heading size="md" color={TEXT_INK}>{toKRW(remainManwon)}</Heading>
-
+            <Text fontSize="sm" color={C.border} fontFamily="'NeoDGM', system-ui, sans-serif">남은 예산</Text>
+            <Heading size="md" color={TEXT_INK} fontFamily="'NeoDGM', system-ui, sans-serif">{toKRW(remainManwon)}</Heading>
             <VStack align="stretch" spacing={2} pt={2}>
-              <Text fontSize="sm" color={C.border}>행복 지수</Text>
+              <Text fontSize="sm" color={C.border} fontFamily="'NeoDGM', system-ui, sans-serif">행복 지수</Text>
               <Progress value={kpis.happy} colorScheme="purple" rounded="full"/>
-              <Text fontSize="sm" color={C.border}>건강 지수</Text>
+              <Text fontSize="sm" color={C.border} fontFamily="'NeoDGM', system-ui, sans-serif">건강 지수</Text>
               <Progress value={kpis.health} colorScheme="purple" rounded="full"/>
-              <Text fontSize="sm" color={C.border}>안정성 지수</Text>
+              <Text fontSize="sm" color={C.border} fontFamily="'NeoDGM', system-ui, sans-serif">안정성 지수</Text>
               <Progress value={kpis.stability} colorScheme="purple" rounded="full"/>
             </VStack>
 
@@ -814,7 +941,8 @@ export default function Quest1({
                 color={C.border}
                 _hover={{ bg: C.ribbon }}
                 onClick={onClose}
-              >
+                fontFamily="'NeoDGM', system-ui, sans-serif"
+              > 
                 닫기
               </Button>
               <HStack>
@@ -825,10 +953,10 @@ export default function Quest1({
                   _hover={{ bg: C.ribbon }}
                   onClick={() => setPaused(p => !p)}
                   isDisabled={!running}
-                >
+                  fontFamily="'NeoDGM', system-ui, sans-serif"
+                > 
                   {paused ? "재개" : "일시정지"}
                 </Button>
-                {/* 수동 종료: 현재 상태로 즉시 평가 */}
                 <Button
                   colorScheme="purple"
                   onClick={() => {
@@ -836,6 +964,7 @@ export default function Quest1({
                     if (ok) finishSuccess(stateBagRef.current, spentManwonRef.current);
                     else    finishFailAndExit(reasons);
                   }}
+                  fontFamily="'NeoDGM', system-ui, sans-serif"
                 >
                   종료
                 </Button>
@@ -844,6 +973,7 @@ export default function Quest1({
           </VStack>
         </Flex>
       </Box>
+
 
       <style>{`
         @keyframes shake {
