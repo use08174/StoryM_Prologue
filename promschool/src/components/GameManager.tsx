@@ -132,6 +132,7 @@ export const GameManager = () => {
     4: { topicType: "lclsf", topicName: "전입신고시 주의사항" },
   };
   const [currentCharacterId, setCurrentCharacterId] = useState<number | undefined>(undefined);
+  const EXP_STAGES = 5; // exp 이미지 단계 개수 (0~4면 5)
 
 
   // 오디오 잠금 해제 & 재생 준비
@@ -176,7 +177,11 @@ export const GameManager = () => {
     }, 1200);
     return () => clearTimeout(t);
   }, []);
-
+  //exp
+  useEffect(() => {
+    const stage = Math.min(Math.max(0, Number(currentQuest) - 1), EXP_STAGES - 1);
+    setExp(stage);
+  }, [currentQuest]);
   // 세션 생성
   useEffect(() => {
     const fetchSession = async () => {
