@@ -91,7 +91,7 @@ function PhoneIntroModal({
   );
 }
 
-const QUEST_TO_TIP: Record<number, { topicType: "lclsf" | "mdlsf"; topicName: string }> = {
+const QUEST_TO_TIP: Record<number, { topicType: "lclsf" | "mclsf"; topicName: string }> = {
     1: { topicType: "lclsf", topicName: "자취" },
     2: { topicType: "lclsf", topicName: "청년주택" },
     3: { topicType: "lclsf", topicName: "부동산 계약" },
