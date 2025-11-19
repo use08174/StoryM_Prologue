@@ -15,7 +15,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": "src"
   },
   "include": ["src"],
   // setupProxy only works with js, need to exclude

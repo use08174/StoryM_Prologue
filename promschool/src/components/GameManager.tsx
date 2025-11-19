@@ -36,8 +36,9 @@ import Quest4 from "./Quest4/Quest4";
 import Quest5Library from "./Library/Quest5Library";
 import PolicyTipIcon from "./PolicyTipIcon";
 import MiniMap from "./MiniMap";
-
-
+import { usePolicyTipStore } from "state/policyTipStore";
+import type { TipTopicType } from "state/policyTipStore";
+import { createCharacter, getCharacterMeta, type CharacterMeta } from "features/getCharacterMeta";
 
 /** 폰 알림 클릭 시 띄우는 챗봇 인트로 모달 */
 function PhoneIntroModal({
@@ -90,6 +91,13 @@ function PhoneIntroModal({
   );
 }
 
+const QUEST_TO_TIP: Record<number, { topicType: "lclsf" | "mdlsf"; topicName: string }> = {
+    1: { topicType: "lclsf", topicName: "자취" },
+    2: { topicType: "lclsf", topicName: "청년주택" },
+    3: { topicType: "lclsf", topicName: "부동산 계약" },
+    4: { topicType: "lclsf", topicName: "전입신고시 주의사항" },
+  };
+
 export const GameManager = () => {
   const [sessionId, setSessionId] = useState<string>();
   const [endResult, setEndResult] = useState<ResultScreenProps>();
@@ -116,6 +124,15 @@ export const GameManager = () => {
   const alarmSoundRef = useRef<HTMLAudioElement | null>(null);
   const [pendingAlarmSound, setPendingAlarmSound] = useState(false);
   const eastworldClient = new EastworldClient({ BASE: "/api" });
+  const unlock = usePolicyTipStore((s) => s.unlock);
+  const QUEST_TO_TIP: Record<number, { topicType: TipTopicType; topicName: string }> = {
+    1: { topicType: "lclsf", topicName: "자취" },
+    2: { topicType: "lclsf", topicName: "청년주택" },
+    3: { topicType: "lclsf", topicName: "부동산 계약" },
+    4: { topicType: "lclsf", topicName: "전입신고시 주의사항" },
+  };
+  const [currentCharacterId, setCurrentCharacterId] = useState<number | undefined>(undefined);
+
 
   // 오디오 잠금 해제 & 재생 준비
   useEffect(() => {
@@ -177,6 +194,37 @@ export const GameManager = () => {
     fetchSession();
   }, [pendingAlarmSound]);
 
+  //캐릭터 정보 불러오기
+  useEffect(() => {
+    async function ensureCharacter() {
+      // 1) 로컬 퍼시스턴스에서 먼저 꺼내기
+      const persisted = (getGameState() as any).characterId as number | undefined;
+      if (persisted) {
+        setCurrentCharacterId(persisted);
+        return;
+      }
+
+      // 2) 없다면 생성 흐름 (이미 캐릭터 생성 UI가 따로 있으면 그쪽에서 저장만 해주면 됨)
+      try {
+        // 필요값은 네 앱에 맞게 채워줘
+        const { character_id } = await createCharacter({
+          user_id: "current-user-id", // 토큰/세션에서 가져오기
+          gender: "여성",
+          region: "의왕",
+          job: "대학생",
+        });
+        (getGameState() as any).characterId = character_id;
+        saveGameState();
+        setCurrentCharacterId(character_id);
+      } catch (e) {
+        console.error(e);
+        // 생성 UI로 유도하거나 토스트
+      }
+    }
+
+    ensureCharacter();
+  }, []);
+
   // endGame listen
   useEffect(() => {
     const token: string = PubSub.subscribe(Topics.endGame, (_c, payload) => {
@@ -186,6 +234,24 @@ export const GameManager = () => {
       PubSub.unsubscribe(token);
     };
   }, []); 
+  
+  useEffect(() => {
+    const subs = [
+      PubSub.subscribe(Topics.quest1Completed, () => unlock({ ...QUEST_TO_TIP[1], scope: "quest", source: { quest: 1 } })),
+      PubSub.subscribe(Topics.quest2Completed, () => unlock({ ...QUEST_TO_TIP[2], scope: "quest", source: { quest: 2 } })),
+      PubSub.subscribe(Topics.quest3Completed, () => unlock({ ...QUEST_TO_TIP[3], scope: "quest", source: { quest: 3 } })),
+      PubSub.subscribe(Topics.quest4Completed, () => unlock({ ...QUEST_TO_TIP[4], scope: "quest", source: { quest: 4 } })),
+
+      // 또는 endGame 페이로드에 quest 번호가 있다면 아래처럼 한방에 처리
+      PubSub.subscribe(Topics.endGame, (_c, payload: any) => {
+        const q = Number(payload?.questId);
+        if (q && QUEST_TO_TIP[q]) unlock({ ...QUEST_TO_TIP[q], scope: "quest", source: { quest: q } });
+      }),
+    ];
+    return () => subs.forEach((t) => PubSub.unsubscribe(t));
+  }, [unlock]);
+
+  
 
 
   // PubSub로 외부에서 퀘스트 시작 요청이 올 수 있게 유지
@@ -306,10 +372,7 @@ export const GameManager = () => {
 
             {/* 정책 TIP 아이콘(유지) */}
             <PolicyTipIcon
-              topicType="lclsf"
-              topicName="취업"
-              characterMeta={{ gender: "여성", region: "의왕", job: "대학생" }}
-              boxSize="60px"
+              characterId={currentCharacterId}
             />
 
             {/* 퀘스트 진행현황 */}

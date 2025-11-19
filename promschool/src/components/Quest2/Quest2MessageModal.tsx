@@ -52,12 +52,11 @@ export interface MessageModalQuest2Props {
   themeColor?: string;  // custom 모드 테두리색
 
   /** 공통 옵션 */
-  typingSpeed?: number;           // ms/글자 (0=즉시)
-  overlayClickAdvance?: boolean;  // 오버레이 클릭으로 진행
-  clickToAdvance?: boolean;       // "Enter로 다음" 클릭 영역
+  typingSpeed?: number;           
+  overlayClickAdvance?: boolean;  
+  clickToAdvance?: boolean;       
 }
 
-/** 화자 메타 (퀘스트3 모달 스타일에 맞춘 팔레트) */
 const META: Record<
   Speaker,
   { avatar: string; nameColor: string; bubbleTint: string }
@@ -126,8 +125,8 @@ const SCENES: Record<Quest2Scene, Line[]> = {
 
   /* 두 번째 매물 */
   house2_intro: [
-    { who: "중개인", text: "이번 집은 보고 가신 분이 곧 연락 준다고 했어요.\n마음에 드시면 그분보다 빨리 계약하셔야 합니다~" },
-    { who: "버디", text: "MISSION 3. 두 번째 매물 자세히 살펴보기\n(1) 벽지/바닥, (2) 붙박이장, (3) 베란다" },
+    { who: "중개인", text: "두번째 매물도 살펴볼까요?\n이번 집은 보고 가신 분이 곧 연락 준다고 했어요.\n마음에 드시면 그분보다 빨리 계약하셔야 합니다~" },
+    { who: "버디", text: "MISSION 3. 두 번째 매물 자세히 살펴보기\n(1) 벽지/바닥, (2) 붙박이장, (3) 베란다 모두 꼼꼼히 확인해!" },
   ],
   h2_wall_buddy: [
     { who: "버디", text: "벽지 곰팡이/얼룩/들뜸, 바닥 긁힘/틈새 벌어짐 체크! 입주 전 도배·바닥 교체 약속 가능 여부도 중요!" },

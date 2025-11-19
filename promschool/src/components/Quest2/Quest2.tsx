@@ -1,8 +1,10 @@
 // src/components/Quest2/Quest2.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Box, Text, Button, HStack } from "@chakra-ui/react";
 import ChoiceFlow from "./ChoiceFlow";
 import Quest2MsgModal, { Quest2Scene } from "./Quest2MessageModal";
+import PubSub from "pubsub-js";
+import Topics from "rpg/data/topics"; 
 
 const C = { shadow: "rgba(0,0,0,0.55)" };
 
@@ -16,7 +18,7 @@ type Quest2Props = {
 export default function Quest2({ onClose, onFinish }: Quest2Props) {
   const [house, setHouse] = useState<HouseId>(1);
   const [stage, setStage] = useState<"house" | "final">("house");
-
+  const emittedOnceRef = useRef(false);
   const [msgOpen, setMsgOpen] = useState(false);
   const [msgScene, setMsgScene] = useState<Quest2Scene>("house1_intro");
 
@@ -153,6 +155,10 @@ export default function Quest2({ onClose, onFinish }: Quest2Props) {
           if (msgScene === "success") {
             // 성공: 보상 안내 후 퀘스트 종료
             setMsgOpen(false);
+            if (!emittedOnceRef.current) {
+             PubSub.publish(Topics.quest2Completed);
+             emittedOnceRef.current = true;
+           }
             onFinish?.();
             onClose?.();
           } else if (msgScene === "failed") {

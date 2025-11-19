@@ -1,4 +1,3 @@
-// src/components/Quest1.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
@@ -16,16 +15,17 @@ import {
 } from "@chakra-ui/react";
 import { PIXEL_PALETTE as C } from "../pixelpalette";
 import Quest1MessageModal from "./MessageModal";
-import Quest1Rulebook from "./Quest1Rulebook"; // ✅ 새 컴포넌트
+import Quest1Rulebook from "./Quest1Rulebook"; 
+import PubSub from "pubsub-js";
+import Topics from "rpg/data/topics"; 
 
-// 카드 안에 들어갈 아이콘 이미지 크기
 const DROP_ICON_SIZE = 40;
 
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onFinish: (report: Report) => void; // ✅ 성공일 때만 호출(실패는 재도전 오버레이)
+  onFinish: (report: Report) => void; 
   mode?: "edu" | "arcade";
   incomeKRW?: number;
 };
@@ -145,7 +145,7 @@ export default function Quest1({
   status: "success" | "error" | "info" | "warning" = "success"
 ) =>
   toast({
-    duration: status === "success" ? 2000 : 2000, // 🔸 좀 더 빨리 사라지게
+    duration: status === "success" ? 1000 : 1000, 
     isClosable: false,
     render: () => {
       const variants = {
@@ -343,7 +343,6 @@ useEffect(() => {
   setFailReason("");
   lastTimeRef.current = null;
   resizeCanvas();
-  // 🔥 추가 끝
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [isOpen, mode]);
 
@@ -437,9 +436,13 @@ useEffect(() => {
     if (k.health    < CONFIG.THRESH.healthMin)    reasons.push(`건강 지수 미달(${k.health} < ${CONFIG.THRESH.healthMin})`);
     return { ok, requiredOk, k, reasons };
   };
-
+  const emittedOnceRef = useRef(false);
   const finishSuccess = (bagFinal: Bag, spentFinal: number) => {
     setRunning(false);
+    if (!emittedOnceRef.current) {
+     PubSub.publish(Topics.quest1Completed);
+     emittedOnceRef.current = true;
+   }
     const remain = incomeManwon - spentFinal;
     const evalRes = evaluate(bagFinal);
     showCenterToast(
@@ -517,13 +520,13 @@ useEffect(() => {
     }
   };
 
-  // ✅ 최신 bag/spent를 즉시 평가에 쓰기 위한 ref
+  // 최신 bag/spent를 즉시 평가에 쓰기 위한 ref
   const spentManwonRef = useRef(spentManwon);
   const stateBagRef = useRef<Bag>(bag);
   useEffect(()=>{ spentManwonRef.current = spentManwon; },[spentManwon]);
   useEffect(()=>{ stateBagRef.current = bag; },[bag]);
 
-  // ✅ 아이템 즉시 적용 + 예산 0 되면 즉시 종료/평가
+  // 아이템 즉시 적용 + 예산 0 되면 즉시 종료/평가
   const addItemImmediate = (key:string) => {
     const it = CONFIG.ITEMS.find(i => i.key === key)!;
     const nextSpent = spentManwonRef.current + it.price;
@@ -540,7 +543,7 @@ useEffect(() => {
     setBag(bagCandidate);
     setReqCount(reqGot);
 
-    // ✅ 남은 예산 0 → 즉시 평가 & 메인 복귀
+    // 남은 예산 0 → 즉시 평가 & 메인 복귀
     if (nextSpent === incomeManwon) {
       const { ok, reasons } = evaluate(bagCandidate);
       if (ok) finishSuccess(bagCandidate, nextSpent);
@@ -624,7 +627,6 @@ useEffect(() => {
   // 아이콘(이모지) 기준 Y 위치
   const iconY = d.y - 6;
 
-  // 🔥 이모지만 그리기
   ctx.font = `${CONFIG.EMOJI_FONT}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -738,7 +740,7 @@ useEffect(() => {
         onClose={() => setShowGuide(false)}
       />
             <Box
-        // ✅ 카드 프레임 대신 전체 화면을 쓰는 레이아웃 박스
+        // 카드 프레임 대신 전체 화면을 쓰는 레이아웃 박스
         position="absolute"
         inset={0}
         pt={`max(64px, calc(env(safe-area-inset-top) + 32px))`}
@@ -749,15 +751,16 @@ useEffect(() => {
         <Box
           position="absolute"
           top={`max(10px, env(safe-area-inset-top))`}
-          left="18px"
+          left="38px"
           bg={LABEL_BG}
           border={`3px solid ${FRAME_BORDER}`}
           borderRadius="10px"
-          px={3}
+          px={10}
           py={0.5}
           zIndex={3}
+          fontFamily="NeoDGM"
         >
-          <Text fontSize="sm" fontWeight="bold" color={LABEL_TEXT}>
+          <Text fontSize="20px" fontWeight="bold" color={LABEL_TEXT}>
             QUEST 1
           </Text>
         </Box>
@@ -765,8 +768,8 @@ useEffect(() => {
         <Flex
           gap={[3, 4, 6]}
           align="stretch"
-          h="100%"
-          direction={["column-reverse", "row"]} // 모바일에서는 패널이 아래로
+          h="90%"
+          direction={["column-reverse", "row"]} 
         >
           {/* 좌: 캔버스 영역 */}
           <Box
@@ -782,17 +785,17 @@ useEffect(() => {
           >
             <canvas
               ref={canvasRef}
-              width={900}
+              width={800}
               height={520}
               style={{
-                width: "100%",     // ✅ 가로는 가능한 만큼 채우기
-                height: "auto",    // ✅ 비율 유지하면서 세로 자동
+                width: "100%",     
+                height: "auto",    
                 display: "block",
                 borderRadius: 8
               }}
             />
 
-            {/* ✅ 오버레이(인트로/실패)는 그대로 유지 */}
+            {/*오버레이(인트로/실패)는 그대로 유지 */}
             {overlay && (
               <Flex
                 position="absolute"
@@ -825,7 +828,7 @@ useEffect(() => {
                         <Quest1Rulebook
                           stabilityMin={CONFIG.THRESH.stabilityMin}
                           healthMin={CONFIG.THRESH.healthMin}
-                          autoOpen={overlay === "intro"}   // 🔥 인트로일 때 자동으로 오픈
+                          autoOpen={overlay === "intro"}   
                         />
                       </HStack>
                       <Text fontSize="xs" opacity={0.7} color={C.border} fontFamily="'NeoDGM', system-ui, sans-serif">

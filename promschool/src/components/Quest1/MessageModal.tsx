@@ -263,6 +263,7 @@ export default function Quest1MessageModal({
             fontSize={["sm","sm","md"]}   // 기존 ["sm","sm","md"] → 키움
             mt={[2, 3]}
             mb={[2, 3]}
+            fontFamily="NeoDGM"
           >
             {title}
           </Text>
@@ -275,6 +276,7 @@ export default function Quest1MessageModal({
               lineHeight="1.7"             // 가독성 약간 증가
               whiteSpace="pre-wrap"
               userSelect="none"
+              fontFamily="NeoDGM"
             >
               {shown}
               {/* 커서: 검정으로 통일 */}

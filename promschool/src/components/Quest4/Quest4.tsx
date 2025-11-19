@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useRef} from "react";
 import { Box, Button, VStack, Text, Image, Link } from "@chakra-ui/react";
 import MessageModalQuest3 from "../Quest3/Mission2/MessageModalQuest3Mission2";
 import type { Mission2Scene } from "../Quest3/Mission2/MessageModalQuest3Mission2";
+import PubSub from "pubsub-js";
+import Topics from "rpg/data/topics"; 
 
 const C = { primary:"#7E44A8", accent:"#FCCFDB", mid:"#A372C2", dark:"#121318", panel:"#1A1B22" };
 const pixelBorder = (outer=C.primary, inner=C.mid)=>({
@@ -38,7 +40,12 @@ export default function Quest4({ onFinish }: Props) {
   const handleDone = () => {
     setStep("done");
     openScene("transfer_complete");
+    if (!emittedOnceRef.current) {
+      PubSub.publish(Topics.quest4Completed);
+      emittedOnceRef.current = true;
+    }
   };
+  const emittedOnceRef = useRef(false);
 
   return (
     <Box

@@ -18,10 +18,12 @@ type PhoneButtonProps = {
   alarm: number;
   highlight?: boolean;
   onClick?: () => void;
-  label?: string;          // 더 이상 사용하지 않지만, 타입은 호환 위해 유지
+  label?: string;
   iconSrc?: string;
   rightAdornment?: ReactNode;
 };
+
+const BADGE_SIZE = 22;
 
 export default function PhoneButton({
   alarm,
@@ -46,7 +48,6 @@ export default function PhoneButton({
         boxShadow="none"
         cursor="pointer"
         position="relative"
-        // minW="70px"  제거
         _hover={{ transform: "scale(1.06)" }}
         _active={{ transform: "scale(0.98)" }}
         animation={highlight ? `${wiggle} 900ms ease-in-out infinite` : undefined}
@@ -55,7 +56,6 @@ export default function PhoneButton({
           <Box
             position="absolute"
             inset="-4px"
-            // 배경 없이 pulse만
             borderRadius="12px"
             animation={`${pulse} 1.4s ease-out infinite`}
             pointerEvents="none"
@@ -67,24 +67,34 @@ export default function PhoneButton({
         {alarm > 0 && (
           <Box
             position="absolute"
-            top="-2px"
+            top="-10px"
             right="-2px"
-            bg="red.500"
-            color="white"
-            fontSize="xs"
-            fontWeight="bold"
-            px={2}
-            borderRadius="full"
-            lineHeight="18px"
-            minW="18px"
-            textAlign="center"
+            w={`${BADGE_SIZE}px`}
+            h={`${BADGE_SIZE}px`}
+            pointerEvents="none"
           >
-            {alarm}
+            <Image
+              src="/assets/sprites/alarm.png"
+              alt="alarm"
+              boxSize={`${BADGE_SIZE}px`}
+              draggable={false}
+            />
+            <Box
+              position="absolute"
+              inset={0}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              fontSize="10px"
+              fontWeight="bold"
+              color="white"
+              textShadow="0 1px 2px rgba(0,0,0,.6)"
+              lineHeight={`${BADGE_SIZE}px`}
+            >
+              {alarm}
+            </Box>
           </Box>
         )}
-
-        {/* 라벨 제거 */}
-        {/* <Text ...>{label}</Text> */}
 
         {rightAdornment}
       </Box>

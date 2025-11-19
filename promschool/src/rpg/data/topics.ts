@@ -10,6 +10,10 @@ enum Topics {
   startQuest2 =  "startQuest2",
   startQuest3 =  "startQuest3",
   resumeGame = "resumeGame",
+  quest1Completed = "quest/1/completed",
+  quest2Completed ="quest/2/completed",
+  quest3Completed = "quest/3/completed",
+  quest4Completed = "quest/4/completed",
 
 }
 
