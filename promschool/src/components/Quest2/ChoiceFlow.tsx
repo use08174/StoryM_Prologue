@@ -591,8 +591,8 @@ export default function ChoiceFlow({
 
           <HStack mt={3} justify="space-between">
             {phase === "zoom" ? (
-              <Button variant="outline" borderColor={S.border} onClick={() => setPhase("overview")}>
-                ← 돌아가기(Backspace)
+              <Button variant="outline" borderColor="white" onClick={() => setPhase("overview")}>
+                <Text color="#ffffffff" fontFamily="NeoDGM">돌아가기</Text>
               </Button>
             ) : (
               <Box />

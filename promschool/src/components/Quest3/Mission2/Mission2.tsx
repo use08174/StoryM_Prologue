@@ -1,4 +1,3 @@
-// src/components/Mission2.tsx
 import { useState } from "react";
 import {
   Box, Button, HStack, VStack, Text, Image, Modal, ModalOverlay, ModalContent, Tag, Icon,
@@ -68,7 +67,7 @@ export default function Mission2({ onResult }: { onResult: () => void }) {
           alignItems="center"
           justifyContent="space-between"
         >
-          <Text fontFamily="NeoDGM" fontSize="14px">[MISSION 2] 계약 관련 서류 점검하기</Text>
+          <Text fontFamily="NeoDGM" fontSize="20px">[MISSION 2] 계약 관련 서류 점검하기</Text>
           <Tag bg={C.accent} color={C.primary} fontFamily="NeoDGM" {...pixelBorder(C.primary, C.primary)}>
             완료 {checkedDocs.length}/{docs.length}
           </Tag>
@@ -79,13 +78,12 @@ export default function Mission2({ onResult }: { onResult: () => void }) {
           bg={C.dark}
           px={4}
           py={2}
-          {...pixelBorder(C.mid, C.primary)}
           position="absolute"
           left="12px"
           right="12px"
           top="52px"
         >
-          <Text fontSize="13px" fontFamily="NeoDGM">
+          <Text fontSize="15px" fontFamily="NeoDGM">
             중개인이 제시한 서류를 꼼꼼히 살펴보고, 의심스러운 점이 있다면 수정을 요청하세요.
           </Text>
         </Box>
@@ -162,7 +160,6 @@ export default function Mission2({ onResult }: { onResult: () => void }) {
           bg={C.dark}
           px={3}
           py={2}
-          {...pixelBorder(C.mid, C.primary)}
         >
           <Button
             colorScheme="purple"
