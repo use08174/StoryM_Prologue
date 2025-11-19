@@ -5,6 +5,8 @@ import Mission1 from "./Mission1";
 import Mission2 from "./Mission2/Mission2";
 import FinalizeContract from "./Mission2/FinalizeContract"; 
 import MessageModalQuest3 from "./Mission2/MessageModalQuest3Mission2";
+import PubSub from "pubsub-js";
+import Topics from "rpg/data/topics"; 
 
 type Props = {
   onClose: () => void;
@@ -17,7 +19,7 @@ const C = { shadow: "rgba(0,0,0,0.55)" };
 export default function Quest3({ onClose, onFinish }: Props) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1); 
   const [m1Result, setM1Result] = useState<boolean | null>(null);
-  const [showM2Intro, setShowM2Intro] = useState(false); // ✅ 미션2 인트로 모달
+  const [showM2Intro, setShowM2Intro] = useState(false); 
 
   const handleMission1Result = (success: boolean) => {
     setM1Result(success);
@@ -128,8 +130,9 @@ export default function Quest3({ onClose, onFinish }: Props) {
       {step === 3 && (
         <FinalizeContract
           onFinished={() => {
-            // 계약 절차 완료 → 최종 완료 화면
+            // 계약 절차 완료 → 최종 완료 화면 + TIP 언락 신호 발행
             setStep(4);
+            PubSub.publish(Topics.quest3Completed);
           }}
         />
       )}

@@ -184,27 +184,24 @@ export default function ChoiceFlow({
 
   // ChoiceFlow 컴포넌트 내부에 헬퍼 추가
   const getBuddyScene = (h: 1|2|3, v: 1|2|3): Quest2Scene | null => {
-    // h=1: (창문/싱크대/화장실)  v=1/2/3
     if (h === 1) {
       if (v === 1) return "h1_window_buddy";
       if (v === 2) return "h1_sink_buddy";
       if (v === 3) return "h1_toilet_buddy";
     }
-    // h=2: (현관문/보일러/외부) → 네가 원한게 벽지/붙박이/베란다면 여길 바꿔!
     if (h === 2) {
       if (v === 1) return "h2_wall_buddy";
       if (v === 2) return "h2_closet_buddy";
       if (v === 3) return "h2_veranda_buddy";
     }
-    // 필요 시 h===3도 추가
     return null;
   };
 
   const getAfterScene = (h: 1|2|3, v: 1|2|3, actionKey: string): Quest2Scene | null => {
     // 매물 1: 창문/싱크대/화장실
     if (h === 1) {
-      if (v === 1) { // 창문
-        if (actionKey === "open" || actionKey === "sill" || actionKey === "lock") return "h1_window_after";
+      if (v === 1) { 
+        if (actionKey === "sill") return "h1_window_after";
       }
       if (v === 2) { // 싱크대
         if (actionKey === "water" || actionKey === "drain") return "h1_sink_after";
@@ -324,7 +321,6 @@ export default function ChoiceFlow({
       setShotImg(a.img ?? null);
       setActiveIdx(idx);
 
-      // ✅ 체크리스트 경유로 들어와도 처음만 힌트
       const keyForHint = `${houseIndex}-${g}`;
       if (!hintShown[keyForHint]) {
         const sceneKey = getBuddyScene(houseIndex as 1|2|3, g);
