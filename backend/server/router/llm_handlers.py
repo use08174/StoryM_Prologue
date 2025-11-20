@@ -266,9 +266,6 @@ async def chat_stream(
         async for chunk in llm.stream_chat_completion(messages):
             # yield는 바로바로 한 조각씩 프론트로 전송됨
             yield chunk
-        # 스트림 종료 시 마지막 신호 전송
-        yield "[DONE]"
-
     # text/event-stream 대신 text/plain으로 — 단순 텍스트 스트림
     return StreamingResponse(event_generator(), media_type="text/plain")
 
