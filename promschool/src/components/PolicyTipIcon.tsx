@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Box, Image, Modal, ModalOverlay, ModalContent, ModalHeader,
-  ModalBody, ModalCloseButton, List, ListItem, Text, useDisclosure,
+  ModalBody, ModalCloseButton, Text, useDisclosure,
   useToast, HStack, Button, Tag, keyframes, Tabs, TabList, TabPanels, Tab, TabPanel, VStack, Divider
 } from "@chakra-ui/react";
 import { TopicType as APITopicType, YouthPolicyTip } from "../api/getYouthPolicyTip";
@@ -9,9 +9,10 @@ import { getYouthPolicyTip } from "../api/getYouthPolicyTip";
 import { getCharacterMeta, CharacterMeta } from "features/getCharacterMeta";
 import { usePolicyTipStore } from "state/policyTipStore";
 import type { PolicyTipState } from "state/policyTipStore";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 const C = { primary:"#7E44A8", accent:"#FCCFDB", mid:"#A372C2", dark:"#121318", panel:"#1A1B22" };
-
 const pixelBorder = (outer = C.primary, inner = C.mid) => ({
   border: "0",
   boxShadow: `0 0 0 2px ${outer}, 0 0 0 4px ${inner}, inset 0 0 0 2px ${inner}`,
@@ -39,8 +40,8 @@ type Props = {
   boxSize?: string;
   src?: string;
   autoOpenOnUnlock?: boolean;
-  highlight?: boolean;     
-  alarmCount?: number;     
+  highlight?: boolean;
+  alarmCount?: number;
 };
 
 const LCLSF_TOPICS = ["교육", "복지문화", "일자리", "주거", "참여권리"];
@@ -83,6 +84,7 @@ export default function PolicyTipIcon({
   const doPulse        = typeof highlight === "boolean" ? highlight : computedBadge > 0;
   const isDirectMode   = !!(topicType && topicName);
 
+  // 캐릭터 메타 로딩
   useEffect(() => {
     if (characterMeta) {
       setMeta({ character_id: characterId ?? 0, user_id: userId ?? "", ...characterMeta });
@@ -99,6 +101,7 @@ export default function PolicyTipIcon({
     })();
   }, [characterId, characterMeta, userId, toast]);
 
+  // 모달 오픈 시 자동 로드
   useEffect(() => {
     if (!isOpen) return;
     (async () => {
@@ -117,6 +120,7 @@ export default function PolicyTipIcon({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // 언락 시 자동 오픈
   useEffect(() => {
     if (!autoOpenOnUnlock) return;
     if (lastUnlockedId) { setTabIndex(0); onOpen(); }
@@ -159,6 +163,19 @@ export default function PolicyTipIcon({
     : selected?.name ?? "-";
 
   const isSelected = (t: APITopicType, name: string) => selected?.t === t && selected?.name === name;
+
+  // ✅ tip 원문을 마크다운 → HTML 변환 + XSS sanitize
+  const sanitizedHtml = useMemo(() => {
+    const md =
+      tip?.raw ??
+      tip?.bullets
+        ?.map((b) => `- **${b.title}**${b.summary ? ` — ${b.summary}` : ""}`)
+        .join("\n") ??
+      "";
+    marked.setOptions({ breaks: true });
+    const html = marked.parse(md) as string;
+    return DOMPurify.sanitize(html);
+  }, [tip]);
 
   return (
     <>
@@ -230,17 +247,28 @@ export default function PolicyTipIcon({
             <Tabs variant="unstyled" colorScheme="purple" index={tabIndex} onChange={setTabIndex}>
               <TabList>
                 <Tab _selected={{ color: C.accent, borderBottom: `2px solid ${C.accent}` }}>TIP</Tab>
-                <Tab _selected={{ color: C.accent, borderBottom: `2px solid ${C.accent}` }}>주제 선택하기</Tab>
+                <Tab _selected={{ color: C.accent, borderBottom: `2px solid ${C.accent}` }}>선택함</Tab>
               </TabList>
               <TabPanels mt={3}>
-                {/* 새 소식 */}
+                {/* TIP 본문 */}
                 <TabPanel>
                   {(tip || isDirectMode || lastUnlockedId || selected) && (
                     <HStack spacing={2} mb={3} flexWrap="wrap">
-                      <Tag size="sm" bg={C.mid} color="white" {...pixelBorder(C.primary, C.primary)}>{headerTypeText}</Tag>
-                      <Tag size="sm" bg={C.accent} color={C.primary} {...pixelBorder(C.primary, C.primary)}>{headerNameText}</Tag>
+                      <Tag size="sm" bg={C.mid} color="white" {...pixelBorder(C.primary, C.primary)}>{
+                        isDirectMode
+                          ? (topicType === "lclsf" ? "대주제" : "중주제")
+                          : lastUnlockedId && findById(lastUnlockedId)
+                            ? (findById(lastUnlockedId)!.topicType === "lclsf" ? "대주제" : "중주제")
+                            : selected
+                              ? (selected.t === "lclsf" ? "대주제" : "중주제")
+                              : "대주제/중주제"
+                      }</Tag>
+                      <Tag size="sm" bg={C.accent} color={C.primary} {...pixelBorder(C.primary, C.primary)}>
+                        {isDirectMode ? topicName : lastUnlockedId && findById(lastUnlockedId) ? findById(lastUnlockedId)!.topicName : selected?.name ?? "-"}
+                      </Tag>
                     </HStack>
                   )}
+
                   {loading && (
                     <Box bg={C.dark} p="16px" {...pixelBorder(C.mid, C.primary)} fontFamily="neodgm" fontSize="20px" letterSpacing="0.5px">
                       LOADING
@@ -249,27 +277,59 @@ export default function PolicyTipIcon({
                       <Box as="span" animation={`${blink} 1s infinite .3s`}>.</Box>
                     </Box>
                   )}
+
                   {!loading && tip && (
-                    <Box bg={C.dark} p="14px" {...pixelBorder(C.mid, C.primary)}>
-                      <List spacing={3}>
-                        {tip.bullets.map((b, i) => (
-                          <ListItem key={i}>
-                            <HStack align="start" spacing={3}>
-                              <Box w="10px" h="10px" bg={C.accent} boxShadow={`0 0 0 2px ${C.primary}, 0 0 0 4px ${C.mid}`} flexShrink={0} />
-                              <Box>
-                                <Text as="span" fontWeight="bold" color={C.accent} fontFamily="neodgm" fontSize="12px">
-                                  {i + 1}. {b.title}
-                                </Text>
-                                {b.summary && <Text mt="4px" fontSize="12px" color="#CFCFD6">— {b.summary}</Text>}
-                              </Box>
-                            </HStack>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </Box>
+                    <Box
+                      bg={C.dark}
+                      p="14px"
+                      {...pixelBorder(C.mid, C.primary)}
+                      sx={{
+                        fontSize: "13px",
+                        lineHeight: 1.45,
+                        color: "#CFCFD6",
+
+                        "& p": { margin: "4px 0" },
+                        "& ul, & ol": { margin: "4px 0 6px 16px", paddingLeft: "16px" },
+                        "& li": { margin: "2px 0" },
+                        "& ul > li > strong": {
+                          fontSize: "13px",
+                          color: C.accent,
+                          fontWeight: "bold",
+                          display: "inline-block",
+                          marginBottom: "2px",
+                        },
+                        "& ul ul": { marginTop: "4px" },
+                        "& ul ul > li": {
+                          fontSize: "12px",
+                          color: "#E4E4EA",
+                        },
+                        "& li p": { margin: 0, display: "inline" },
+                        "& h1, & h2, & h3": {
+                          color: C.accent,
+                          fontWeight: "bold",
+                          margin: "6px 0 4px",
+                          lineHeight: 1.25,
+                        },
+                        "& strong": { color: C.accent, fontWeight: "bold" },
+                        "& a": { color: C.accent, textDecoration: "underline" },
+                        "& pre": {
+                          background: "#0f1014",
+                          padding: "8px",
+                          borderRadius: "6px",
+                          overflowX: "auto",
+                          margin: "6px 0",
+                        },
+                        "& code": { fontSize: "12px" },
+                      }}
+                      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                    />
+
                   )}
+
                   {!loading && !tip && (
-                    <Text fontSize="sm" color="#CFCFD6">새로 언락된 TIP이 없어요. “선택함”에서 주제를 골라 Tip을 불러와 보세요.</Text>
+                    <Text fontSize="sm" color="#CFCFD6">
+                      새로 언락된 TIP이 없어요. “선택함”에서 주제를 골라 Tip을 불러와 보세요.
+                    </Text>
                   )}
                 </TabPanel>
 
