@@ -260,7 +260,6 @@ export default function Quest1({
   const [paused, setPaused] = useState(false);
   const [overlay, setOverlay] = useState<OverlayKind>("intro");
   const [failReason, setFailReason] = useState<string>("");
-
   // UI state
   const [incomeManwon] = useState(Math.round(incomeKRW/10000));
   const [spentManwon, setSpentManwon] = useState(0);

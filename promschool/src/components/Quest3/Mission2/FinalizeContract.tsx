@@ -119,9 +119,9 @@ export default function FinalizeContract({ onFinished }: Props) {
               <Text fontSize="xs" mb={1}>은행</Text>
               <Select value={bank} onChange={(e)=>setBank(e.target.value)} w="160px" bg="white">
                 <option>00 은행</option>
-                <option>국민은행</option>
-                <option>신한은행</option>
-                <option>우리은행</option>
+                <option>두리 은행</option>
+                <option>스토림 은행</option>
+                <option>미래 은행</option>
               </Select>
             </Box>
             <Box>
