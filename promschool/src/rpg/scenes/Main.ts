@@ -181,6 +181,13 @@ export default class Main extends Phaser.Scene {
         repeat: -1,
       });
 
+      this.physics.add.overlap(this.player, zone, () => {
+        if (this.activeQuestZone !== questId) {
+          this.activeQuestZone = questId;
+          PubSub.publish(Topics.atQuestZone, { q: questId });
+        }
+      });
+
       return { zone, text, questId };
     };
 
@@ -525,6 +532,7 @@ export default class Main extends Phaser.Scene {
         )
       ) {
         this.activeQuestZone = null;
+        PubSub.publish(Topics.atQuestZone, { q: null });
       }
     }
   }

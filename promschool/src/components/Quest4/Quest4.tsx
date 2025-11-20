@@ -97,7 +97,7 @@ export default function Quest4({ onFinish }: Props) {
         {/* ② 주민센터 방문 */}
         {step === "visit" && (
           <VStack spacing={4}>
-            <Image src="/assets/quest4_scenes/office.png" w="650px" />
+            <Image src="/assets/quest4_scenes/quest4_move_report.png" w="650px" />
             <Text>담당 공무원: 안녕하세요. 전입신고서와 주민등록증 보여주세요.</Text>
             <Button onClick={() => openScene("transfer_stamp")} colorScheme="purple" {...pixelBorder()}>
               전입신고서 작성하기
@@ -150,9 +150,9 @@ export default function Quest4({ onFinish }: Props) {
             </Text>
             <Text textAlign="center" color="gray.200" fontFamily="NeoDGM" >
               전입신고와 확정일자까지 모두 완료했습니다.  
-              이제 진짜 내 이름으로 된 안전한 보금자리가 되었어요 🏠
+              <br></br>이제 진짜 내 이름으로 된 안전한 보금자리가 되었어요 🏠<br></br>수고하셨습니다!
             </Text>
-            <Button colorScheme="teal" fontFamily="NeoDGM" onClick={onFinish}>닫기</Button>
+            <Button colorScheme="pink" fontFamily="NeoDGM" onClick={onFinish}>닫기</Button>
           </VStack>
         )}
       </VStack>

@@ -217,7 +217,7 @@ export const GameManager = () => {
         const { character_id } = await createCharacter({
           user_id: "current-user-id", // 토큰/세션에서 가져오기
           gender: "여성",
-          region: "의왕",
+          region: "서울",
           job: "대학생",
         });
         (getGameState() as any).characterId = character_id;
@@ -323,7 +323,7 @@ export const GameManager = () => {
       if (prev < 5) {
         return (prev + 1) as QuestId; // 1→2→3→4→5
       }
-      return prev; // 5면 그대로 유지
+      return prev; 
     });
   };
 

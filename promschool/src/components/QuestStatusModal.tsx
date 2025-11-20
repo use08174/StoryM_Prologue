@@ -67,7 +67,7 @@ export default function QuestStatusModal({
           />
         
         <ModalHeader pt="10px" pb="0" fontFamily="NeoDGM" letterSpacing="0.5px">
-          퀘스트 진행 현황
+          퀘스트 진행도
         </ModalHeader>
 
         <ModalBody pt="14px" pb="16px">
