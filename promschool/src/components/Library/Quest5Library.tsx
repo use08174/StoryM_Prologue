@@ -1,18 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-  Box,
-  Flex,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  Button,
-  Tag,
-  TagLabel,
-  Badge,
-  StackDivider,
+  Box, Flex, Heading, Text, VStack, HStack, Button, Tag, TagLabel, Badge, StackDivider,
+  Image, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton,
 } from "@chakra-ui/react";
 
+const AGENCY_IMG = "/assets/library_scenes/library_site.png"; 
 const C = { shadow: "rgba(0,0,0,0.55)" };
 
 type CategoryId = "housing" | "saving" | "job" | "portal";
@@ -292,6 +284,7 @@ const categories: CategoryConfig[] = [
 
 export default function Quest5Library({ onClose, onFinish }: Quest5LibraryProps) {
   const [current, setCurrent] = useState<CategoryId>("housing");
+  const [openAgency, setOpenAgency] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -396,6 +389,40 @@ export default function Quest5Library({ onClose, onFinish }: Quest5LibraryProps)
                 </Button>
               );
             })}
+
+            <Button
+              mt={1}
+              justifyContent="flex-start"
+              bg="rgba(255,255,255,0.08)"
+              _hover={{ bg: "rgba(255,255,255,0.12)" }}
+              color="yellow.100"
+              borderRadius="full"
+              size="sm"
+              fontFamily="NeoDGM"
+              leftIcon={<span>🏛️</span>}
+              onClick={() => setOpenAgency(true)}
+            >
+              사용 기관 모음
+            </Button>
+
+            <Modal isOpen={openAgency} onClose={() => setOpenAgency(false)} isCentered size="3xl">
+              <ModalOverlay bg="blackAlpha.700" />
+              <ModalContent bg="rgba(20,10,0,0.92)" color="yellow.50">
+                <ModalHeader fontFamily="NeoDGM">사용 기관/포털 모음</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                  <Image
+                    src={AGENCY_IMG}
+                    alt="사용한 기관/포털 모음"
+                    w="100%"
+                    h="auto"
+                    objectFit="contain"
+                    borderRadius="md"
+                  />
+                </ModalBody>
+              </ModalContent>
+            </Modal>
+
 
             <Box flex="1" />
 
