@@ -81,7 +81,7 @@ export default function DocDeunggi({ onComplete }: Props) {
             <Button
               onClick={() => {
                 setStep("을구");
-                openScene("deunggi_eulgu"); // ✅ 을구 대사
+                openScene("deunggi_eulgu");
               }}
               bg={C.accent}
               color={C.primary}

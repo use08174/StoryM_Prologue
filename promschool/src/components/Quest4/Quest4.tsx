@@ -102,7 +102,7 @@ export default function Quest4({ onFinish }: Props) {
             <Button onClick={() => openScene("transfer_stamp")} colorScheme="purple" {...pixelBorder()}>
               전입신고서 작성하기
             </Button>
-            <Button onClick={handleDone} colorScheme="teal" {...pixelBorder()}>
+            <Button onClick={handleDone} colorScheme="pink" {...pixelBorder()}>
               확정일자 도장 받기
             </Button>
           </VStack>
