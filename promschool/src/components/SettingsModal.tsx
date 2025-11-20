@@ -31,9 +31,9 @@ const PX = {
   name:       { x: 1110, y: 360,  w: 1150, h: 200 },
   officialId: { x: 1110, y: 580,  w: 1150, h: 750 },
   region:     { x: 1110, y: 820,  w: 1150, h: 1350 },
-  job:        { x: 2550, y: 820,  w: 1220, h: 300 },
+  job:        { x: 1110, y: 820,  w: 1220, h: 300 },
   gender:     { x: 2550, y: 360,  w: 900,  h: 300 },
-  bgm:        { x: 2550, y: 540,  w: 700,  h: 1950 },
+  bgm:        { x: 2550, y: 540,  w: 1000,  h: 1550 },
 };
 const pct = (v: number, base: number) => `${(v / base) * 100}%`;
 const CONTENT_OFFSET_Y = 80;
@@ -165,21 +165,9 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <Overlay {...PX.name}>
               <Box w="100%">
                 <Text color="white" fontFamily="NeoDGM"fontSize={{ base: "20px", md: "22px" }} mb={2}>이름:</Text>
-                <Box px={4} py={3} border="2px solid rgba(132,98,160,0.6)" bg="rgba(50,40,56,0.6)" color="white" borderRadius="8px" fontSize="16px">
+                <Box fontFamily="NeoDGM" px={4} py={3} border="2px solid rgba(132,98,160,0.6)" bg="rgba(50,40,56,0.6)" color="white" borderRadius="8px" fontSize="20px">
                   {name || "—"}
                 </Box>
-              </Box>
-            </Overlay>
-
-            {/* Official ID(뷰) */}
-            <Overlay {...PX.officialId}>
-              <Box w="100%">
-                <Text color="white" fontFamily="NeoDGM"fontSize={{ base: "20px", md: "22px" }} mb={2}>Official ID:</Text>
-                <HStack px={4} py={3} border="2px solid rgba(132,98,160,0.6)" bg="rgba(50,40,56,0.6)" color="white" borderRadius="8px" fontSize="16px" justify="space-between">
-                  <Text noOfLines={1} pr={2}>{officialId || "—"}</Text>
-                  
-                   
-                </HStack>
               </Box>
             </Overlay>
 
@@ -188,7 +176,7 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <HStack spacing={4} height="100%">
                 <Text color="white" fontFamily="NeoDGM"fontSize={{ base: "20px", md: "22px" }} mr={3}>성별:</Text>
                 <Image src={gender === "male" ? IMG.ICON_MALE : IMG.ICON_FEMALE} alt="" w="22px" h="22px" />
-                <Text color="white">{gender === "male" ? "남성" : "여성"}</Text>
+                <Text fontFamily="NeoDGM" color="white">{gender === "male" ? "남성" : "여성"}</Text>
               </HStack>
             </Overlay>
 
@@ -204,7 +192,7 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <Overlay {...PX.region}>
               <Box w="100%">
                 <Text color="white" fontFamily="NeoDGM"fontSize={{ base: "20px", md: "22px" }} mb={2}>거주지역:</Text>
-                <Box px={4} py={3} border="2px solid rgba(132,98,160,0.6)" bg="rgba(50,40,56,0.6)" color="white" borderRadius="8px" fontSize="16px">
+                <Box px={4} py={3} border="2px solid rgba(132,98,160,0.6)" bg="rgba(50,40,56,0.6)" color="white" fontFamily="NeoDGM" borderRadius="8px" fontSize="20px">
                   {region || "—"}
                 </Box>
               </Box>
@@ -213,7 +201,7 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <Overlay {...PX.job}>
               <Box w="100%">
                 <Text color="white"fontFamily="NeoDGM" fontSize={{ base: "20px", md: "22px" }} mb={2}>직업:</Text>
-                <Box px={4} py={3} border="2px solid rgba(132,98,160,0.6)" bg="rgba(50,40,56,0.6)" color="white" borderRadius="8px" fontSize="16px">
+                <Box fontFamily="NeoDGM" px={4} py={3} border="2px solid rgba(132,98,160,0.6)" bg="rgba(50,40,56,0.6)" color="white" borderRadius="8px" fontSize="20px">
                   {job || "—"}
                 </Box>
               </Box>

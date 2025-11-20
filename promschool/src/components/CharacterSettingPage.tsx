@@ -188,14 +188,16 @@ export default function Setting() {
 
       const data = await res.json();
       console.log("캐릭터 생성 성공:", data);
-
-      // ✅ DB에 저장된 캐릭터 id를 브라우저에 기억
       if (data.character_id) {
+        // 게임 쪽에서 쓰는 용도
         localStorage.setItem("characterId", String(data.character_id));
+        // 설정 카드에 찍을 "공식 ID" 용
+        localStorage.setItem("officialId", String(data.character_id));
       }
-
-      // (선택) 프론트에서 알고 있는 gender도 같이 저장해두면 백업용으로 쓸 수 있음
-      localStorage.setItem("playerGender", gender);
+      localStorage.setItem("playerName", name);
+      localStorage.setItem("playerRegion", region);
+      localStorage.setItem("playerJob", job);
+      localStorage.setItem("playerGender", gender); // "male" | "female"
 
       nav("/prologue");
       

@@ -229,8 +229,8 @@ export default function PolicyTipIcon({
           <ModalBody pt="14px" pb="16px" fontFamily="NeoDGM">
             <Tabs variant="unstyled" colorScheme="purple" index={tabIndex} onChange={setTabIndex}>
               <TabList>
-                <Tab _selected={{ color: C.accent, borderBottom: `2px solid ${C.accent}` }}>새 소식</Tab>
-                <Tab _selected={{ color: C.accent, borderBottom: `2px solid ${C.accent}` }}>선택함</Tab>
+                <Tab _selected={{ color: C.accent, borderBottom: `2px solid ${C.accent}` }}>TIP</Tab>
+                <Tab _selected={{ color: C.accent, borderBottom: `2px solid ${C.accent}` }}>주제 선택하기</Tab>
               </TabList>
               <TabPanels mt={3}>
                 {/* 새 소식 */}
